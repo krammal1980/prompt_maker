@@ -1,0 +1,2362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revit Commercial Building — Prompt Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=IBM+Plex+Mono:wght@300;400;500&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ══════════════════════════════════════
+   TOKENS
+══════════════════════════════════════ */
+:root {
+  --bg:          #EDF1F6;
+  --bg2:         #E0E7F0;
+  --surface:     #FFFFFF;
+  --surface2:    #E7EEF6;
+  --border:      #C9D6E3;
+  --border2:     #AEC1D4;
+  --text:        #14202C;
+  --text-mid:    #3D5468;
+  --text-dim:    #7A90A6;
+  --accent:      #2F5E8C;
+  --accent-light:#4A86C0;
+  --accent-dim:  rgba(47,94,140,0.09);
+  --accent-glow: rgba(47,94,140,0.18);
+  --ok:          #2F5E8C;
+  --radius:      8px;
+  --radius-lg:   14px;
+  --card-w:      136px;
+  --card-img-h:  90px;
+  --transition:  0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ══════════════════════════════════════
+   RESET + BASE
+══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 400;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══════════════════════════════════════
+   HEADER
+══════════════════════════════════════ */
+.site-header {
+  background: #16222E;
+  color: var(--bg);
+  padding: 0 40px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+.header-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 22px;
+  font-weight: 300;
+  letter-spacing: 0.01em;
+  color: #fff;
+  line-height: 1;
+}
+.header-logo span { color: var(--accent-light); }
+.header-sep {
+  width: 1px;
+  height: 16px;
+  background: rgba(255,255,255,0.18);
+}
+.header-tag {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 400;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-pill {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.5);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.header-sel-count {
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-family: 'Space Grotesk', sans-serif;
+  min-width: 30px;
+  text-align: center;
+  transition: var(--transition);
+}
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.header-nav a {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  transition: all var(--transition);
+}
+.header-nav a:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.header-nav a.active { color: #fff; background: var(--accent); }
+@media (max-width: 720px) { .header-nav { display: none; } }
+
+/* ══════════════════════════════════════
+   MAIN LAYOUT
+══════════════════════════════════════ */
+.main-layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 58px);
+}
+
+/* ══════════════════════════════════════
+   LEFT PANEL — WIZARD
+══════════════════════════════════════ */
+.wizard-panel {
+  overflow-y: auto;
+  padding: 32px 40px 80px;
+  height: 100%;
+}
+.wizard-panel::-webkit-scrollbar { width: 4px; }
+.wizard-panel::-webkit-scrollbar-track { background: transparent; }
+.wizard-panel::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* progress bar */
+.progress-bar-wrap {
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.progress-bar-track {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  width: 0%;
+}
+.progress-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  min-width: 60px;
+  text-align: right;
+}
+
+/* ══════════════════════════════════════
+   ACCORDION STEP
+══════════════════════════════════════ */
+.step {
+  margin-bottom: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.step.has-selection {
+  border-color: var(--accent);
+}
+.step.open {
+  border-color: var(--border2);
+  box-shadow: 0 4px 24px rgba(26,23,20,0.06);
+}
+.step.open.has-selection {
+  border-color: var(--accent);
+  box-shadow: 0 4px 24px var(--accent-glow);
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--transition);
+}
+.step-header:hover { background: var(--surface2); }
+
+.step-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+.step.has-selection .step-num {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.step-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--text);
+  flex: 1;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+.step-subtitle {
+  font-size: 9.5px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.step-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+.step-badge.empty {
+  background: var(--bg2);
+  color: var(--text-dim);
+}
+.step-badge.filled {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+.step-chevron {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--text-dim);
+  transition: transform var(--transition);
+}
+.step.open .step-chevron { transform: rotate(180deg); }
+
+.step-body {
+  display: none;
+  padding: 4px 20px 20px;
+  border-top: 1px solid var(--border);
+}
+.step.open .step-body { display: block; }
+
+.step-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  margin-bottom: 14px;
+  margin-top: 10px;
+}
+
+/* ══════════════════════════════════════
+   MATERIAL CARDS
+══════════════════════════════════════ */
+.cards-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.mat-card {
+  width: var(--card-w);
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+  position: relative;
+}
+.mat-card:hover {
+  border-color: var(--accent-light);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26,23,20,0.1);
+}
+.mat-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow), 0 6px 20px rgba(26,23,20,0.1);
+  transform: translateY(-2px);
+}
+.mat-card .card-img-wrap {
+  position: relative;
+  width: 100%;
+  height: var(--card-img-h);
+  overflow: hidden;
+}
+.mat-card .card-swatch {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.35s ease;
+  object-fit: cover;
+  display: block;
+}
+.mat-card:hover .card-swatch { transform: scale(1.07); }
+.mat-card .card-swatch.img-swatch {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.35s ease;
+}
+.mat-card .card-swatch.img-swatch.loaded { opacity: 1; }
+.mat-card .card-swatch-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.35s ease;
+}
+.mat-card:hover .card-swatch-bg,
+.mat-card:hover .card-swatch { transform: scale(1.07); }
+/* shimmer loading state */
+.card-img-wrap.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  z-index: 1;
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.mat-card .card-check {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 20px; height: 20px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #fff;
+  font-weight: bold;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(47,94,140,0.4);
+}
+.mat-card.selected .card-check { display: flex; }
+.mat-card .card-label {
+  padding: 7px 8px 9px;
+  font-size: 10.5px;
+  color: var(--text-mid);
+  line-height: 1.35;
+  text-align: center;
+  font-weight: 400;
+}
+.mat-card.selected .card-label {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ══════════════════════════════════════
+   CHIPS
+══════════════════════════════════════ */
+.options-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.chip {
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  color: var(--text-mid);
+  padding: 7px 14px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  transition: all var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  letter-spacing: 0.01em;
+}
+.chip:hover { border-color: var(--accent-light); color: var(--text); background: var(--accent-dim); }
+.chip.selected { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; }
+
+/* ══════════════════════════════════════
+   COLOR CHIPS
+══════════════════════════════════════ */
+.color-chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  color: var(--text-mid);
+  padding: 7px 14px 7px 9px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  transition: all var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.color-chip:hover { border-color: var(--accent-light); color: var(--text); background: var(--accent-dim); }
+.color-chip.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+.color-swatch {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(26,23,20,0.12);
+}
+
+/* ══════════════════════════════════════
+   CHECKBOX ITEMS
+══════════════════════════════════════ */
+.surroundings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 6px;
+}
+.check-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.check-item:hover { border-color: var(--accent-light); background: var(--accent-dim); }
+.check-item.checked { border-color: var(--accent); background: var(--accent-dim); }
+.check-box {
+  width: 16px; height: 16px;
+  border: 1.5px solid var(--border2);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition);
+  background: var(--surface);
+}
+.check-item.checked .check-box { background: var(--accent); border-color: var(--accent); }
+.check-tick { color: #fff; font-size: 10px; font-weight: bold; display: none; }
+.check-item.checked .check-tick { display: block; }
+.check-label { font-size: 12px; color: var(--text-mid); font-weight: 400; }
+.check-item.checked .check-label { color: var(--accent); font-weight: 500; }
+
+.quick-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+.quick-btn {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px; letter-spacing: 0.06em; font-weight: 500;
+  padding: 5px 14px;
+  border-radius: 20px; cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: transparent; color: var(--text-dim);
+  transition: all var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+.quick-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+/* ══════════════════════════════════════
+   OUTPUT PANEL
+══════════════════════════════════════ */
+.output-panel {
+  background: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-left: 1px solid rgba(255,255,255,0.06);
+}
+.output-header {
+  padding: 22px 26px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+.output-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.output-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 20px;
+  font-weight: 300;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+.output-model-tag {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  font-weight: 500;
+}
+.output-meta {
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 0.04em;
+}
+.output-word-count {
+  color: var(--accent-light);
+  font-weight: 500;
+}
+
+.output-box {
+  flex: 1;
+  padding: 20px 26px;
+  overflow-y: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  line-height: 1.9;
+  color: rgba(255,255,255,0.65);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.output-box::-webkit-scrollbar { width: 3px; }
+.output-box::-webkit-scrollbar-track { background: transparent; }
+.output-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* highlighted segments inside prompt */
+.prompt-base { color: rgba(255,255,255,0.45); }
+.prompt-selection { color: #fff; font-weight: 500; }
+.prompt-label { color: var(--accent-light); font-style: italic; }
+
+.output-actions {
+  padding: 14px 26px 18px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.btn-copy {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 13px 20px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: all var(--transition);
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-copy:hover { background: var(--accent-light); }
+.btn-copy.copied { background: var(--ok); }
+.btn-copy svg { flex-shrink: 0; }
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+}
+.btn-secondary {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.45);
+  padding: 10px 16px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: all var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-secondary:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.08); }
+.btn-reset:hover { border-color: rgba(47,94,140,0.4); color: var(--accent-light); background: rgba(47,94,140,0.08); }
+
+/* char count ring */
+.output-ring-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 2px;
+}
+.ring-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 0.06em;
+}
+
+/* ══════════════════════════════════════
+   MOBILE FAB
+══════════════════════════════════════ */
+.fab-prompt { display: none; }
+
+/* ══════════════════════════════════════
+   TWEAKS PANEL
+══════════════════════════════════════ */
+.tweaks-panel {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  right: 424px;
+  width: 260px;
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 40px rgba(26,23,20,0.15);
+  z-index: 500;
+  overflow: hidden;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.tweaks-panel.visible { display: block; }
+.tweaks-header {
+  background: #16222E;
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tweaks-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 16px;
+  font-weight: 300;
+  color: #fff;
+}
+.tweaks-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color var(--transition);
+}
+.tweaks-close:hover { color: #fff; }
+.tweaks-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; font-family: 'IBM Plex Mono', monospace; }
+.tweak-group {}
+.tweak-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.tweak-options {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tweak-btn {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--bg2);
+  color: var(--text-mid);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.tweak-btn:hover { border-color: var(--accent-light); color: var(--accent); }
+.tweak-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tweak-divider { height: 1px; background: var(--border); margin: 2px 0; }
+
+/* ══════════════════════════════════════
+   CARD HOVER PREVIEW (feature 2)
+══════════════════════════════════════ */
+.card-preview-popup {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  border: 1.5px solid var(--border2);
+  opacity: 0;
+  transform: scale(0.92) translateY(6px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  width: 220px;
+  background: var(--surface);
+}
+.card-preview-popup.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+.card-preview-img-wrap {
+  width: 220px;
+  height: 148px;
+  overflow: hidden;
+  position: relative;
+}
+.card-preview-img-wrap .card-swatch-bg,
+.card-preview-img-wrap img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  position: absolute; inset: 0;
+}
+.card-preview-name {
+  padding: 9px 12px 10px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text);
+  background: var(--surface);
+  letter-spacing: 0.01em;
+}
+
+/* ══════════════════════════════════════
+   SELECTED THUMBNAILS STRIP (feature 4)
+══════════════════════════════════════ */
+.picks-strip {
+  padding: 10px 26px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+.picks-strip-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  margin-bottom: 7px;
+}
+.picks-thumbs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+}
+.pick-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  flex-shrink: 0;
+  cursor: default;
+}
+.pick-thumb-bg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+}
+.pick-thumb img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.pick-thumb img.loaded { opacity: 1; }
+.pick-thumb-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 10;
+  letter-spacing: 0.04em;
+}
+.pick-thumb:hover .pick-thumb-tip { opacity: 1; }
+.picks-empty {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: rgba(255,255,255,0.2);
+  padding-bottom: 10px;
+  letter-spacing: 0.06em;
+}
+
+/* ══════════════════════════════════════
+   PRESETS (feature 5)
+══════════════════════════════════════ */
+.presets-bar {
+  display: flex;
+  gap: 6px;
+  padding: 10px 26px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.presets-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  margin-right: 2px;
+  white-space: nowrap;
+}
+.preset-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.55);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all var(--transition);
+  letter-spacing: 0.04em;
+}
+.preset-chip:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.2); }
+.preset-chip .preset-del {
+  color: rgba(255,255,255,0.3);
+  font-size: 11px;
+  line-height: 1;
+  margin-left: 2px;
+  padding: 0 2px;
+  transition: color var(--transition);
+}
+.preset-chip .preset-del:hover { color: #ff6b6b; }
+.btn-save-preset {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px dashed rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.35);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all var(--transition);
+  letter-spacing: 0.04em;
+}
+.btn-save-preset:hover { border-color: var(--accent-light); color: var(--accent-light); }
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+@media (max-width: 900px) {
+  .main-layout { grid-template-columns: 1fr; height: auto; overflow: visible; }
+  .wizard-panel { padding: 20px 16px 120px; height: auto; }
+  .site-header { padding: 0 16px; }
+
+  .output-panel {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 64vh;
+    border-radius: 18px 18px 0 0;
+    transform: translateY(calc(100% - 0px));
+    transition: transform 0.38s cubic-bezier(0.4,0,0.2,1);
+    z-index: 200;
+    box-shadow: 0 -12px 48px rgba(26,23,20,0.25);
+    border-left: none;
+    border-top: 2px solid var(--accent-light);
+  }
+  .output-panel.open { transform: translateY(0); }
+  .output-header { padding-top: 24px; position: relative; }
+  .output-header::before {
+    content: '';
+    width: 36px; height: 4px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+    position: absolute;
+    top: 10px; left: 50%;
+    transform: translateX(-50%);
+    display: block;
+  }
+
+  .fab-prompt {
+    display: flex;
+    align-items: center; gap: 8px;
+    position: fixed;
+    bottom: 18px; right: 16px;
+    background: var(--text); color: #fff;
+    border: 2px solid var(--accent-light);
+    padding: 13px 20px;
+    border-radius: 50px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; z-index: 300;
+    box-shadow: 0 6px 24px rgba(26,23,20,0.3);
+    transition: all var(--transition);
+    -webkit-tap-highlight-color: transparent;
+    letter-spacing: 0.04em;
+  }
+  .fab-prompt:active { transform: scale(0.96); }
+  .fab-count {
+    background: var(--accent); color: #fff;
+    border-radius: 50px;
+    padding: 2px 9px;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 22px; text-align: center;
+  }
+  .backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(26,23,20,0.5);
+    z-index: 190;
+  }
+  .backdrop.visible { display: block; }
+  .tweaks-panel { right: 16px; bottom: 80px; }
+}
+
+/* ── VIDEO PROMPT MODE ── */
+.vp-modebar { display:flex; gap:6px; margin-bottom:12px; }
+.vp-modebtn { flex:1; font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; padding:9px; border-radius:7px; cursor:pointer; background:var(--surface2); border:1px solid var(--border); color:var(--text-mid); transition:all var(--transition); }
+.vp-modebtn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+.vp-controls { display:none; flex-direction:column; gap:10px; margin-bottom:16px; padding:14px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
+.vp-controls.show { display:flex; }
+.vp-guide { font-size:11px; line-height:1.5; color:var(--text-mid); border:1px dashed var(--border2); border-radius:8px; padding:9px 10px; }
+.vp-guide b { color:var(--accent-light); }
+.vp-row { display:flex; gap:6px; flex-wrap:wrap; }
+.vp-seg, .vp-ratio { flex:1; min-width:80px; font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600; padding:8px 6px; border-radius:7px; cursor:pointer; background:var(--surface2); border:1px solid var(--border); color:var(--text-mid); text-align:center; transition:all var(--transition); }
+.vp-seg.active, .vp-ratio.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+.vp-lbl { font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-dim); margin-top:2px; }
+.vp-input { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:12px; padding:8px 10px; border-radius:7px; outline:none; }
+.vp-input:focus { border-color:var(--accent-light); }
+.vp-toggles { display:flex; flex-direction:column; gap:7px; margin-top:4px; }
+.vp-tog { display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--text-mid); cursor:pointer; }
+.vp-tog input { accent-color:var(--accent-light); width:14px; height:14px; }
+</style>
+<template id="__bundler_thumbnail" data-bg-color="#162A1E">
+  <svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+    <!-- header bar -->
+    <rect width="120" height="12" fill="#0e1f15"/>
+    <text x="8" y="8.5" font-family="Georgia,serif" font-style="italic" font-size="6" fill="#fff" opacity="0.9">Prompt Studio</text>
+    <rect x="90" y="3.5" width="22" height="5" rx="2.5" fill="#2D6044" opacity="0.7"/>
+    <!-- left wizard panel -->
+    <rect x="0" y="12" width="76" height="68" fill="#EDF2EE"/>
+    <rect x="6" y="18" width="64" height="1.5" rx="0.75" fill="#C8DDD0"/>
+    <!-- step rows -->
+    <rect x="6" y="24" width="64" height="9" rx="3" fill="#fff" stroke="#C8DDD0" stroke-width="0.5"/>
+    <circle cx="12" cy="28.5" r="3" fill="#2D6044"/>
+    <rect x="18" y="26.5" width="28" height="1.5" rx="0.75" fill="#111C15" opacity="0.6"/>
+    <rect x="18" y="29.5" width="18" height="1" rx="0.5" fill="#7A9E88"/>
+    <rect x="6" y="35" width="64" height="9" rx="3" fill="#fff" stroke="#2D6044" stroke-width="0.8"/>
+    <circle cx="12" cy="39.5" r="3" fill="#2D6044"/>
+    <rect x="18" y="37.5" width="24" height="1.5" rx="0.75" fill="#111C15" opacity="0.6"/>
+    <rect x="6" y="46" width="64" height="9" rx="3" fill="#fff" stroke="#C8DDD0" stroke-width="0.5"/>
+    <circle cx="12" cy="50.5" r="3" fill="none" stroke="#C8DDD0" stroke-width="0.8"/>
+    <rect x="18" y="48.5" width="30" height="1.5" rx="0.75" fill="#111C15" opacity="0.5"/>
+    <rect x="6" y="57" width="64" height="9" rx="3" fill="#fff" stroke="#C8DDD0" stroke-width="0.5"/>
+    <circle cx="12" cy="61.5" r="3" fill="none" stroke="#C8DDD0" stroke-width="0.8"/>
+    <rect x="18" y="59.5" width="22" height="1.5" rx="0.75" fill="#111C15" opacity="0.5"/>
+    <!-- right output panel -->
+    <rect x="76" y="12" width="44" height="68" fill="#162A1E"/>
+    <rect x="80" y="18" width="28" height="2" rx="1" fill="#fff" opacity="0.7"/>
+    <rect x="80" y="22" width="18" height="1" rx="0.5" fill="#4A9E6A" opacity="0.6"/>
+    <rect x="80" y="27" width="36" height="1" rx="0.5" fill="#fff" opacity="0.2"/>
+    <rect x="80" y="30" width="32" height="1" rx="0.5" fill="#fff" opacity="0.2"/>
+    <rect x="80" y="33" width="34" height="1" rx="0.5" fill="#fff" opacity="0.15"/>
+    <rect x="80" y="36" width="30" height="1" rx="0.5" fill="#fff" opacity="0.25"/>
+    <rect x="80" y="39" width="36" height="1" rx="0.5" fill="#fff" opacity="0.15"/>
+    <rect x="80" y="42" width="28" height="1" rx="0.5" fill="#fff" opacity="0.2"/>
+    <rect x="80" y="45" width="33" height="1" rx="0.5" fill="#4A9E6A" opacity="0.4"/>
+    <rect x="80" y="48" width="36" height="1" rx="0.5" fill="#fff" opacity="0.15"/>
+    <rect x="80" y="67" width="36" height="7" rx="2" fill="#2D6044"/>
+    <text x="98" y="72" font-family="monospace" font-size="3.5" fill="#fff" text-anchor="middle">Copy Prompt</text>
+  </svg>
+</template>
+
+
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-left">
+    <div class="header-logo">Prompt <span>Studio</span></div>
+    <div class="header-sep"></div>
+    <div class="header-tag">Revit · Commercial Building</div>
+  </div>
+  <nav class="header-nav">
+    <a href="index.html">Home</a>
+    <a href="residential.html">Residential</a>
+    <a href="commercial.html" class="active">Commercial</a>
+  </nav>
+  <div class="header-right">
+    <div class="header-pill">Commercial</div>
+    <div class="header-sel-count" id="selCount">0</div>
+  </div>
+</header>
+
+<div class="main-layout">
+
+  <!-- LEFT: WIZARD -->
+  <div class="wizard-panel">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-label" id="progressLabel">0 / 15</div>
+    </div>
+
+    <!-- Steps injected by JS -->
+    <div id="wizardSteps"></div>
+  </div>
+
+  <!-- RIGHT: OUTPUT -->
+  <div class="output-panel" id="outputPanel">
+    <div class="output-header">
+      <div class="output-header-row">
+        <div class="output-label">Generated Prompt</div>
+        <div class="output-model-tag">Gemini · Imagen</div>
+      </div>
+      <div class="output-meta">
+        <span id="selectionCount">0 selections</span>
+        &nbsp;·&nbsp;
+        <span class="output-word-count" id="wordCount">— words</span>
+      </div>
+    </div>
+
+    <!-- OUTPUT MODE TOGGLE -->
+    <div class="vp-modebar">
+      <button class="vp-modebtn active" id="vpModeImage" onclick="setOutputMode('image')">Image Prompt</button>
+      <button class="vp-modebtn" id="vpModeVideo" onclick="setOutputMode('video')">Video Prompt</button>
+    </div>
+
+    <!-- VIDEO CONTROLS -->
+    <div class="vp-controls" id="vpControls">
+      <div class="vp-guide" id="vpGuide"></div>
+      <div class="vp-row">
+        <button class="vp-seg active" data-vmode="orbit" onclick="setVideoMode('orbit')">Free-Orbit Reference</button>
+        <button class="vp-seg" data-vmode="keyframe" onclick="setVideoMode('keyframe')">First / Last Keyframe</button>
+      </div>
+      <label class="vp-lbl">Subject anchor</label>
+      <input class="vp-input" id="vpSubject" type="text" oninput="onVideoField()">
+      <label class="vp-lbl">Camera move</label>
+      <select class="vp-input" id="vpCamera" onchange="onVideoField()"></select>
+      <label class="vp-lbl">Pacing</label>
+      <select class="vp-input" id="vpPacing" onchange="onVideoField()">
+        <option value="slow, premium real-estate pacing">Slow / premium</option>
+        <option value="moderate steady pacing">Moderate</option>
+        <option value="dynamic energetic pacing">Dynamic</option>
+      </select>
+      <label class="vp-lbl">Aspect ratio</label>
+      <div class="vp-row">
+        <button class="vp-ratio active" data-vr="16:9" onclick="setVideoRatio('16:9')">16:9</button>
+        <button class="vp-ratio" data-vr="9:16" onclick="setVideoRatio('9:16')">9:16</button>
+        <button class="vp-ratio" data-vr="1:1" onclick="setVideoRatio('1:1')">1:1</button>
+      </div>
+      <div class="vp-toggles">
+        <label class="vp-tog"><input type="checkbox" id="vpInheritLight" checked onchange="onVideoField()"> Use lighting from wizard</label>
+        <label class="vp-tog"><input type="checkbox" id="vpGeo" checked onchange="onVideoField()"> Lock geometry (no morphing)</label>
+        <label class="vp-tog"><input type="checkbox" id="vpNoText" checked onchange="onVideoField()"> No text</label>
+        <label class="vp-tog"><input type="checkbox" id="vpNoPeople" checked onchange="onVideoField()"> No people</label>
+        <label class="vp-tog"><input type="checkbox" id="vpAudio" checked onchange="onVideoField()"> Native ambient audio</label>
+      </div>
+    </div>
+
+    <!-- Presets bar (feature 5) -->
+    <div class="presets-bar" id="presetsBar">
+      <span class="presets-label">Presets:</span>
+      <button class="btn-save-preset" onclick="savePreset()">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1v8M1 5h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Save current
+      </button>
+      <div id="presetChips"></div>
+    </div>
+
+    <!-- Selected picks strip (feature 4) -->
+    <div class="picks-strip" id="picksStrip">
+      <div class="picks-strip-label">Selected materials</div>
+      <div class="picks-thumbs" id="picksThumbsRow">
+        <div class="picks-empty" id="picksEmpty">— none yet</div>
+      </div>
+    </div>
+
+    <div class="output-box" id="outputBox"></div>
+    <div class="output-actions">
+      <button class="btn-copy" id="copyBtn" onclick="copyPrompt()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="4" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 4V2.5A1.5 1.5 0 015.5 1H11.5A1.5 1.5 0 0113 2.5V8.5A1.5 1.5 0 0111.5 10H10" stroke="currentColor" stroke-width="1.5"/></svg>
+        Copy Prompt
+      </button>
+      <button class="btn-copy" onclick="printPrompt()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);margin-top:0;">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 4V2h7v2M3.5 10H2a1 1 0 01-1-1V6a1 1 0 011-1h10a1 1 0 011 1v3a1 1 0 01-1 1h-1.5M3.5 8h7v4h-7V8z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        Save as PDF
+      </button>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="expandAll()">Expand All</button>
+        <button class="btn-secondary" onclick="collapseAll()">Collapse All</button>
+        <button class="btn-secondary btn-reset" onclick="resetAll()">Reset</button>
+      </div>
+      <div style="text-align:center; padding-top:6px;">
+        <span style="font-family:'Playfair Display',serif; font-style:italic; font-size:12px; color:rgba(255,255,255,0.28); letter-spacing:0.04em;">By Eng. Kassem Rammal</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Card hover preview popup (feature 2) -->
+<div class="card-preview-popup" id="cardPreviewPopup">
+  <div class="card-preview-img-wrap" id="cardPreviewImgWrap">
+    <div class="card-swatch-bg" id="cardPreviewBg"></div>
+    <img id="cardPreviewImg" alt="" />
+  </div>
+  <div class="card-preview-name" id="cardPreviewName"></div>
+</div>
+
+<!-- Mobile backdrop + FAB -->
+<div class="backdrop" id="backdrop" onclick="closeSheet()"></div>
+<button class="fab-prompt" id="fabBtn" onclick="toggleSheet()">
+  View Prompt <span class="fab-count" id="fabCount">0</span>
+</button>
+
+<!-- TWEAKS PANEL -->
+<div class="tweaks-panel" id="tweaksPanel">
+  <div class="tweaks-header">
+    <div class="tweaks-title">Tweaks</div>
+    <button class="tweaks-close" onclick="closeTweaks()">✕</button>
+  </div>
+  <div class="tweaks-body">
+    <div class="tweak-group">
+      <div class="tweak-label">Card Size</div>
+      <div class="tweak-options">
+        <button class="tweak-btn" onclick="setCardSize('sm')">Small</button>
+        <button class="tweak-btn active" onclick="setCardSize('md')">Medium</button>
+        <button class="tweak-btn" onclick="setCardSize('lg')">Large</button>
+      </div>
+    </div>
+    <div class="tweak-divider"></div>
+    <div class="tweak-group">
+      <div class="tweak-label">Theme</div>
+      <div class="tweak-options">
+        <button class="tweak-btn active" onclick="setTheme('warm')">Warm</button>
+        <button class="tweak-btn" onclick="setTheme('cool')">Cool</button>
+        <button class="tweak-btn" onclick="setTheme('dark')">Dark</button>
+      </div>
+    </div>
+    <div class="tweak-divider"></div>
+    <div class="tweak-group">
+      <div class="tweak-label">Sections</div>
+      <div class="tweak-options">
+        <button class="tweak-btn" onclick="expandAll()">Expand All</button>
+        <button class="tweak-btn" onclick="collapseAll()">Collapse All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// ✏️  CUSTOM IMAGE URLS — edit these to swap any card photo
+//
+// For each material value, you can provide:
+//   • An online URL:  'https://example.com/photo.jpg'
+//   • A local file:   'images/curtain-wall.jpg'
+//                     (place the file next to this HTML)
+//
+// Leave a value as '' (empty string) or remove the line
+// to fall back to the automatic Unsplash search photo.
+//
+// HOW TO ADD: find the material name below, paste your URL.
+// Example:
+//   'curtain wall glass': 'https://images.unsplash.com/photo-xxx',
+//   'exposed concrete':   'images/my-concrete.jpg',
+// ══════════════════════════════════════════════════════
+const IMG_URLS = {
+  // ── FACADE ──────────────────────────────────────────
+  'curtain wall glass':               '',
+  'fritted low-e glazing':            '',
+  'reflective glass façade':          '',
+  'sintered stone slabs':             '',
+  'dekton':                           '',
+  'photo-catalytic concrete':         '',
+  'unitized glass system':            '',
+  'aluminum composite panels':        '',
+  'exposed concrete':                 '',
+  'limestone cladding':               '',
+  'granite panels':                   '',
+  'basalt stone':                     '',
+  'anthracite panels':                '',
+  'steel façade system':              '',
+  'terracotta rainscreen':            '',
+  'modern stucco':                    '',
+  'brick façade':                     '',
+  'perforated metal skin':            '',
+  'ceramic façade panels':            '',
+  'mixed glass and stone':            '',
+  'luxury composite façade':          '',
+  'double-skin façade':               '',
+  'aluminum cladding':                '',
+  'heavy textured stone':             '',
+  // ── ACCENT ──────────────────────────────────────────
+  'brushed aluminum fins':            '',
+  'anodized gold fins':               '',
+  'perforated copper mesh':           '',
+  'bronze metal strips':              '',
+  'black steel frames':               '',
+  'vertical louvers':                 '',
+  'wood-look aluminum battens':       '',
+  'kinetic facade elements':          '',
+  'LED feature bands':                '',
+  'textured stone frames':            '',
+  'architectural screens':            '',
+  'feature canopy cladding':          '',
+  'HPL panels':                       '',
+  'decorative mesh panels':           '',
+  'illuminated façade strips':        '',
+  'expanded metal mesh':              '',
+  'timber-look soffits':              '',
+  // ── WINDOW SYSTEM ───────────────────────────────────
+  'full curtain wall':                '',
+  'punched windows':                  '',
+  'ribbon windows':                   '',
+  'frameless glazing':                '',
+  'structural glazing':               '',
+  'slim aluminum frames':             '',
+  'steel-framed glazing':             '',
+  'unitized curtain wall':            '',
+  'storefront glazing':               '',
+  'u-channel glass':                  '',
+  // ── GLASS ───────────────────────────────────────────
+  'clear glass':                      '',
+  'fritted glass patterns':           '',
+  'translucent ETFE pillows':         '',
+  'reflective blue glass':            '',
+  'smoked glass':                     '',
+  'bronze tinted glass':              '',
+  'low-e glass':                      '',
+  'mirrored façade':                  '',
+  'privacy glazing':                  '',
+  'double glazing with realistic reflections': '',
+  // ── SHADING ─────────────────────────────────────────
+  'none':                             '',
+  'vertical fins':                    '',
+  'horizontal louvers':               '',
+  'brise soleil':                     '',
+  'recessed glazing':                 '',
+  'sun breakers':                     '',
+  'perforated screens':               '',
+  'canopy shading':                   '',
+  'dynamic façade shading':           '',
+  // ── DOOR ────────────────────────────────────────────
+  'automatic sliding glass doors':    '',
+  'revolving doors':                  '',
+  'pivot glass doors':                '',
+  'framed aluminum commercial doors': '',
+  'bronze statement entry':           '',
+  // ── LIGHTING ────────────────────────────────────────
+  'clear structural daylight':        '',
+  'high-contrast architectural lighting': '',
+  'golden hour sunset':               '',
+  'bright midday':                    '',
+  'soft morning light':               '',
+  'cloudy cinematic mood':            '',
+  'rainy reflective mood':            '',
+  'blue hour evening':                '',
+  'dramatic sunset':                  '',
+  'luxury night lighting':            '',
+  'festive retail lighting':          '',
+  'neutral daylight':                 '',
+};
+
+// ══════════════════════════════════════════════════════
+// IMAGE KEYWORDS — Unsplash source search terms per value
+// ══════════════════════════════════════════════════════
+const IMG_KEYWORDS = {
+  // facade
+  'curtain wall glass':                'curtain wall glass building architecture',
+  'fritted low-e glazing':             'fritted glass facade architecture',
+  'reflective glass façade':           'reflective glass skyscraper facade',
+  'sintered stone slabs':              'sintered stone cladding architecture',
+  'dekton':                            'dekton stone surface material',
+  'photo-catalytic concrete':          'white concrete facade architecture',
+  'unitized glass system':             'unitized curtain wall glass panels',
+  'aluminum composite panels':         'aluminum composite cladding building',
+  'exposed concrete':                  'exposed concrete facade brutalist',
+  'limestone cladding':                'limestone cladding building facade',
+  'granite panels':                    'granite stone panels architecture',
+  'basalt stone':                      'basalt stone wall cladding dark',
+  'anthracite panels':                 'dark anthracite metal facade panels',
+  'steel façade system':               'steel facade cladding modern building',
+  'terracotta rainscreen':             'terracotta rainscreen facade cladding',
+  'modern stucco':                     'modern stucco render building facade',
+  'brick façade':                      'contemporary brick facade architecture',
+  'perforated metal skin':             'perforated metal facade architecture',
+  'ceramic façade panels':             'ceramic tile facade cladding building',
+  'mixed glass and stone':             'glass and stone mixed facade building',
+  'luxury composite façade':           'luxury composite dark facade skyscraper',
+  'double-skin façade':                'double skin glass facade architecture',
+  'aluminum cladding':                 'aluminum cladding facade modern',
+  'heavy textured stone':              'textured stone wall architecture',
+  // accent
+  'brushed aluminum fins':             'brushed aluminum architectural fins',
+  'anodized gold fins':                'gold anodized aluminum fins architecture',
+  'perforated copper mesh':            'copper mesh facade architecture',
+  'bronze metal strips':               'bronze metal facade strips architecture',
+  'black steel frames':                'black steel window frames architecture',
+  'vertical louvers':                  'vertical louvers facade sun shading',
+  'wood-look aluminum battens':        'wood aluminum battens facade',
+  'kinetic facade elements':           'kinetic facade architecture dynamic',
+  'LED feature bands':                 'led light facade architecture night',
+  'textured stone frames':             'textured stone window frames building',
+  'architectural screens':             'architectural screen facade building',
+  'feature canopy cladding':           'architectural canopy entrance building',
+  'HPL panels':                        'hpl facade panels modern building',
+  'decorative mesh panels':            'decorative metal mesh facade',
+  'illuminated façade strips':         'illuminated facade strips night building',
+  'expanded metal mesh':               'expanded metal mesh facade architecture',
+  'timber-look soffits':               'timber soffit wood ceiling architecture',
+  // window systems
+  'full curtain wall':                 'full curtain wall glass office building',
+  'punched windows':                   'punched window openings concrete building',
+  'ribbon windows':                    'ribbon windows horizontal facade',
+  'frameless glazing':                 'frameless glass facade minimal',
+  'structural glazing':                'structural glazing glass building',
+  'slim aluminum frames':              'slim aluminum window frames modern',
+  'steel-framed glazing':              'steel framed glass windows industrial',
+  'unitized curtain wall':             'unitized curtain wall glass panels',
+  'storefront glazing':                'commercial storefront glazing retail',
+  'u-channel glass':                   'channel glass translucent facade',
+  // glass types
+  'clear glass':                       'clear glass building facade reflection',
+  'fritted glass patterns':            'fritted glass pattern facade building',
+  'translucent ETFE pillows':          'etfe cushion roof architecture',
+  'reflective blue glass':             'blue reflective glass skyscraper',
+  'smoked glass':                      'smoked dark glass facade building',
+  'bronze tinted glass':               'bronze tinted glass building facade',
+  'low-e glass':                       'low e glass energy efficient building',
+  'mirrored façade':                   'mirror glass facade building sky reflection',
+  'privacy glazing':                   'frosted privacy glass office building',
+  'double glazing with realistic reflections': 'double glazed glass facade reflections',
+  // shading
+  'none':                              'clean glass facade no shading modern',
+  'vertical fins':                     'vertical fins sun shading facade',
+  'horizontal louvers':                'horizontal louvers sun shading architecture',
+  'brise soleil':                      'brise soleil sun shading architecture',
+  'recessed glazing':                  'recessed windows deep reveal facade',
+  'sun breakers':                      'sun breakers architectural shading',
+  'perforated screens':                'perforated screen shading architecture',
+  'canopy shading':                    'architectural canopy sun shading',
+  'dynamic façade shading':            'dynamic adaptive facade shading',
+  // doors
+  'automatic sliding glass doors':     'automatic sliding glass entrance commercial',
+  'revolving doors':                   'revolving door glass entrance building',
+  'pivot glass doors':                 'pivot glass door architectural entrance',
+  'framed aluminum commercial doors':  'aluminum commercial entrance door glass',
+  'bronze statement entry':            'bronze metal entrance door luxury',
+  // lighting
+  'clear structural daylight':         'modern building bright daylight architecture',
+  'high-contrast architectural lighting': 'architecture high contrast sunlight shadow',
+  'golden hour sunset':                'building golden hour sunset architecture',
+  'bright midday':                     'building bright midday sun architecture',
+  'soft morning light':                'architecture soft morning light building',
+  'cloudy cinematic mood':             'building cloudy overcast sky architecture',
+  'rainy reflective mood':             'building rain reflection wet street',
+  'blue hour evening':                 'building blue hour twilight architecture',
+  'dramatic sunset':                   'building dramatic sunset orange sky',
+  'luxury night lighting':             'luxury building night illuminated facade',
+  'festive retail lighting':           'retail building festive night lights',
+  'neutral daylight':                  'building neutral daylight architecture',
+};
+
+// Unsplash image cache
+const imgCache = {};
+
+function getUnsplashUrl(keyword, w, h, seed) {
+  // Use picsum for fallback, unsplash source for real images
+  const q = encodeURIComponent(keyword);
+  return `https://source.unsplash.com/${w}x${h}/?${q}&sig=${seed}`;
+}
+
+function loadCardImage(swatchEl, bgEl, keyword, fallbackGradient, seed) {
+  const wrap = swatchEl.parentElement;
+  // Built-in CSS material texture is the default visual (no external dependency).
+  if (bgEl) bgEl.style.background = fallbackGradient || (VISUALS[val] || '');
+  wrap.classList.remove('loading');
+  // Only fetch over the network when a real custom URL has been supplied.
+  const customUrl = IMG_URLS[val];
+  if (customUrl && customUrl.trim() !== '') {
+    const url = customUrl.trim();
+    const img = new Image();
+    img.onload = () => { swatchEl.src = url; swatchEl.classList.add('loaded'); };
+    img.src = url;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// VISUALS — CSS gradient fallbacks
+// ══════════════════════════════════════════════════════
+const VISUALS = {
+  'curtain wall glass':           'linear-gradient(160deg,rgba(160,200,230,0.55) 0%,rgba(200,230,255,0.75) 35%,rgba(130,180,220,0.45) 65%,rgba(180,215,245,0.65) 100%)',
+  'fritted low-e glazing':        'radial-gradient(circle,rgba(200,225,248,0.6) 1.5px,transparent 1.5px) 0 0 / 8px 8px,linear-gradient(135deg,rgba(150,195,230,0.5) 0%,rgba(185,220,250,0.72) 50%,rgba(130,180,220,0.45) 100%)',
+  'reflective glass façade':      'linear-gradient(135deg,#3a6080 0%,#5a88a8 20%,#2a5070 45%,#6a98b8 65%,#3a6888 100%)',
+  'sintered stone slabs':         'linear-gradient(160deg,#c8c0b4 0%,#d8d0c4 25%,#b8b0a4 50%,#ccc4b8 75%,#d4ccbf 100%)',
+  'dekton':                       'linear-gradient(135deg,#ddd8d0 0%,#c8c4bc 30%,#e4e0d8 60%,#d0ccc4 100%)',
+  'photo-catalytic concrete':     'linear-gradient(160deg,#d8d8d4 0%,#c8c8c4 30%,#e0e0dc 60%,#d0d0cc 100%)',
+  'unitized glass system':        'repeating-linear-gradient(90deg,rgba(155,200,235,0.65) 0px,rgba(155,200,235,0.65) 22px,#1e2830 22px,#1e2830 24px)',
+  'aluminum composite panels':    'repeating-linear-gradient(160deg,#c8ccce 0px,#e4e8ea 2px,#a8acb0 2px,#dadde0 6px,#b8bcbe 6px,#eaedf0 8px)',
+  'exposed concrete':             'linear-gradient(180deg,#7a7e80 0%,#686c6e 30%,#767a7c 60%,#6e7274 100%)',
+  'limestone cladding':           'linear-gradient(160deg,#d0c0a0 0%,#c0b090 40%,#d8c8a8 70%,#b8a880 100%)',
+  'granite panels':               'linear-gradient(135deg,#585c5e 0%,#484c4e 25%,#606468 50%,#404448 75%,#545858 100%)',
+  'basalt stone':                 'linear-gradient(160deg,#2a2e30 0%,#383c3e 25%,#222628 50%,#343838 75%,#2e3234 100%)',
+  'anthracite panels':            'repeating-linear-gradient(160deg,#282c2e 0px,#323638 2px,#1e2224 2px,#2c3032 6px,#242828 6px,#303436 8px)',
+  'steel façade system':          'repeating-linear-gradient(160deg,#b0b4b8 0px,#d0d4d8 2px,#909498 2px,#c8ccce 6px,#a0a4a8 6px,#dcdfe2 8px)',
+  'terracotta rainscreen':        'linear-gradient(150deg,#b86030 0%,#a85020 50%,#c07040 100%)',
+  'modern stucco':                'linear-gradient(160deg,#d8d0c8 0%,#c8c0b8 50%,#dcd4cc 100%)',
+  'brick façade':                 'repeating-linear-gradient(0deg,#7a3e18 0px,#7a3e18 14px,#5a2e10 14px,#5a2e10 16px)',
+  'perforated metal skin':        'radial-gradient(circle,#505458 1.5px,transparent 1.5px),radial-gradient(circle,#505458 1.5px,transparent 1.5px),linear-gradient(135deg,#383c3e 0%,#484c4e 100%)',
+  'ceramic façade panels':        'repeating-linear-gradient(0deg,#b8b4ac 0px,#b8b4ac 18px,#9a9690 18px,#9a9690 20px)',
+  'mixed glass and stone':        'linear-gradient(135deg,rgba(160,200,230,0.55) 0%,#b8a880 50%,rgba(140,185,220,0.45) 100%)',
+  'luxury composite façade':      'linear-gradient(160deg,#181c20 0%,#282c32 40%,#101418 70%,#202428 100%)',
+  'double-skin façade':           'linear-gradient(135deg,rgba(180,215,240,0.5) 0%,rgba(140,185,220,0.3) 30%,rgba(160,200,235,0.55) 60%,rgba(120,175,215,0.4) 100%)',
+  'aluminum cladding':            'repeating-linear-gradient(160deg,#d0d4d8 0px,#eaeef0 2px,#b0b4b8 2px,#dcdfe4 6px,#c0c4c8 6px,#eef0f4 8px)',
+  'heavy textured stone':         'repeating-linear-gradient(30deg,#909080 0px,#808070 6px,#a0a090 6px,#888878 12px)',
+  'low-e glazing':                'linear-gradient(135deg,rgba(160,210,190,0.5) 0%,rgba(190,230,210,0.7) 50%,rgba(140,200,180,0.4) 100%)',
+
+  // accent
+  'brushed aluminum fins':        'repeating-linear-gradient(90deg,#d0d4d8 0px,#eaecf0 2px,#a8acb0 2px,#dcdfe4 7px,#b8bcc0 7px,#e8ecee 9px)',
+  'anodized gold fins':           'repeating-linear-gradient(90deg,#b8900a 0px,#e0b830 2px,#8a6800 2px,#d4aa20 7px,#9a7810 7px,#c8a018 9px)',
+  'perforated copper mesh':       'radial-gradient(circle,#8a4820 1.5px,transparent 1.5px) 0 0 / 7px 7px,linear-gradient(135deg,#6a3410 0%,#a05828 100%)',
+  'bronze metal strips':          'repeating-linear-gradient(90deg,#6a4820 0px,#9a7040 3px,#5a3c18 3px,#b08848 6px,#7a5828 8px)',
+  'black steel frames':           'linear-gradient(160deg,#0e1012 0%,#1c2024 35%,#080c0e 65%,#161a1e 100%)',
+  'vertical louvers':             'repeating-linear-gradient(90deg,#c0c4c8 0px,#e0e4e8 2px,#909498 2px,#d0d4d8 9px)',
+  'wood-look aluminum battens':   'repeating-linear-gradient(90deg,#9b7050 0px,#8b6040 8px,#a88060 8px,#886040 16px)',
+  'kinetic facade elements':      'repeating-linear-gradient(135deg,#4a90c4 0px,#4a90c4 4px,#2a5878 4px,#6ab0e0 8px,#3a7090 8px,#4a90c4 12px)',
+  'LED feature bands':            'linear-gradient(90deg,#0a1020 0%,rgba(74,144,196,0.8) 30%,#ffffff 50%,rgba(74,144,196,0.8) 70%,#0a1020 100%)',
+  'textured stone frames':        'linear-gradient(135deg,#a89878 0%,#b8a888 50%,#989870 100%)',
+  'architectural screens':        'repeating-linear-gradient(0deg,#b8bcc0 0px,#b8bcc0 6px,transparent 6px,transparent 10px)',
+  'feature canopy cladding':      'linear-gradient(160deg,#383c3e 0%,#484c50 50%,#282c2e 100%)',
+  'HPL panels':                   'linear-gradient(160deg,#383c3e 0%,#282c2e 50%,#404448 100%)',
+  'decorative mesh panels':       'repeating-linear-gradient(45deg,#909498 0px,#909498 2px,transparent 2px,transparent 6px),repeating-linear-gradient(-45deg,#909498 0px,#909498 2px,transparent 2px,transparent 6px)',
+  'illuminated façade strips':    'repeating-linear-gradient(0deg,#101418 0px,#101418 20px,rgba(74,144,196,0.7) 20px,rgba(74,144,196,0.7) 22px)',
+  'expanded metal mesh':          'repeating-linear-gradient(60deg,#808890 0px,#808890 2px,transparent 2px,transparent 6px),repeating-linear-gradient(-60deg,#808890 0px,#808890 2px,transparent 2px,transparent 6px)',
+  'timber-look soffits':          'repeating-linear-gradient(90deg,#9b7050 0px,#7a5530 7px,#a88060 7px,#7a5530 14px)',
+
+  // window
+  'full curtain wall':            'linear-gradient(160deg,rgba(150,200,240,0.6) 0%,rgba(190,225,255,0.8) 35%,rgba(120,180,225,0.5) 65%,rgba(170,210,245,0.7) 100%)',
+  'punched windows':              'linear-gradient(160deg,#484c50 0%,#383c40 30%,rgba(160,200,235,0.6) 30%,rgba(160,200,235,0.6) 50%,#3a3e42 50%,#404448 100%)',
+  'ribbon windows':               'repeating-linear-gradient(0deg,#383c3e 0px,#383c3e 20px,rgba(160,200,235,0.65) 20px,rgba(160,200,235,0.65) 36px)',
+  'frameless glazing':            'linear-gradient(135deg,rgba(180,215,245,0.4) 0%,rgba(210,235,255,0.6) 50%,rgba(160,205,235,0.3) 100%)',
+  'structural glazing':           'linear-gradient(160deg,rgba(160,205,235,0.65) 0%,rgba(200,228,252,0.85) 50%,rgba(140,192,228,0.55) 100%)',
+  'slim aluminum frames':         'repeating-linear-gradient(0deg,#282c30 0px,#282c30 18px,rgba(160,200,235,0.6) 18px,rgba(160,200,235,0.6) 36px)',
+  'steel-framed glazing':         'repeating-linear-gradient(0deg,#404448 0px,#404448 3px,rgba(160,200,235,0.55) 3px,rgba(160,200,235,0.55) 28px)',
+  'unitized curtain wall':        'repeating-linear-gradient(90deg,rgba(150,195,230,0.6) 0px,rgba(150,195,230,0.6) 24px,#2a3038 24px,#2a3038 26px)',
+  'storefront glazing':           'linear-gradient(180deg,rgba(160,205,240,0.6) 0%,rgba(180,215,250,0.75) 60%,#282c30 60%,#383c40 100%)',
+  'u-channel glass':              'repeating-linear-gradient(90deg,rgba(210,235,255,0.75) 0px,rgba(210,235,255,0.75) 10px,rgba(160,200,235,0.4) 10px,rgba(160,200,235,0.4) 12px)',
+
+  // glass
+  'clear glass':                  'linear-gradient(135deg,rgba(200,230,255,0.5) 0%,rgba(220,242,255,0.8) 50%,rgba(185,220,248,0.4) 100%)',
+  'fritted glass patterns':       'radial-gradient(circle,rgba(220,235,250,0.8) 1.5px,transparent 1.5px) 0 0 / 9px 9px,linear-gradient(135deg,rgba(160,200,235,0.55) 0%,rgba(195,225,252,0.75) 50%,rgba(140,185,222,0.45) 100%)',
+  'translucent ETFE pillows':     'radial-gradient(ellipse 60% 40%,rgba(220,240,255,0.85) 0%,rgba(180,218,248,0.6) 50%,rgba(160,205,240,0.4) 100%)',
+  'reflective blue glass':        'linear-gradient(135deg,#2a5878 0%,#4a7898 20%,#1a4868 45%,#5a88a8 65%,#2a6080 100%)',
+  'smoked glass':                 'linear-gradient(135deg,#282c30 0%,#343840 50%,#202428 100%)',
+  'bronze tinted glass':          'linear-gradient(135deg,rgba(130,90,40,0.6) 0%,rgba(155,110,60,0.75) 50%,rgba(110,78,32,0.55) 100%)',
+  'low-e glass':                  'linear-gradient(135deg,rgba(155,210,185,0.5) 0%,rgba(185,228,208,0.7) 50%,rgba(135,198,175,0.4) 100%)',
+  'mirrored façade':              'linear-gradient(135deg,#304858 0%,#5078a0 20%,#283848 40%,#608098 60%,#304060 80%,#486888 100%)',
+  'privacy glazing':              'linear-gradient(135deg,#202428 0%,#2c3038 50%,#181c20 100%)',
+  'double glazing with realistic reflections': 'linear-gradient(135deg,rgba(160,200,235,0.6) 0%,rgba(200,230,255,0.82) 30%,rgba(140,185,220,0.5) 65%,rgba(185,218,248,0.72) 100%)',
+
+  // shading
+  'none':                         'linear-gradient(135deg,#e0dbd4 0%,#d0cbc4 100%)',
+  'vertical fins':                'repeating-linear-gradient(90deg,#b0b4b8 0px,#d0d4d8 2px,#888c90 2px,#c0c4c8 9px)',
+  'horizontal louvers':           'repeating-linear-gradient(0deg,#a0a4a8 0px,#c0c4c8 8px,#787c80 8px,#b0b4b8 12px)',
+  'brise soleil':                 'repeating-linear-gradient(0deg,#b8bcbe 0px,#b8bcbe 10px,#888c8e 10px,#888c8e 14px)',
+  'recessed glazing':             'linear-gradient(135deg,#383c3e 0%,rgba(160,200,235,0.5) 30%,#303438 70%,#404448 100%)',
+  'sun breakers':                 'repeating-linear-gradient(0deg,#a8acb0 0px,#a8acb0 10px,#787c80 10px,#787c80 14px)',
+  'perforated screens':           'radial-gradient(circle,#606468 1.5px,transparent 1.5px),radial-gradient(circle,#606468 1.5px,transparent 1.5px),linear-gradient(135deg,#404448 0%,#505458 100%)',
+  'canopy shading':               'linear-gradient(160deg,#383c3e 0%,#585c5e 50%,#282c2e 100%)',
+  'dynamic façade shading':       'repeating-linear-gradient(45deg,#a0a4a8 0px,#a0a4a8 5px,#606468 5px,#606468 8px)',
+
+  // door
+  'automatic sliding glass doors':'linear-gradient(160deg,rgba(190,220,248,0.7) 0%,rgba(210,232,255,0.85) 100%)',
+  'revolving doors':              'conic-gradient(from 0deg,rgba(160,200,235,0.6) 0deg,rgba(180,215,245,0.8) 90deg,rgba(140,185,220,0.5) 180deg,rgba(170,210,240,0.7) 270deg,rgba(160,200,235,0.6) 360deg)',
+  'pivot glass doors':            'linear-gradient(135deg,rgba(185,218,248,0.65) 0%,rgba(210,235,255,0.82) 50%,rgba(165,205,238,0.55) 100%)',
+  'framed aluminum commercial doors': 'linear-gradient(160deg,#303438 0%,rgba(160,200,235,0.6) 25%,#282c30 50%,rgba(150,195,230,0.55) 75%,#383c40 100%)',
+  'bronze statement entry':       'linear-gradient(160deg,#5a3c18 0%,#8a6030 30%,#4a3010 60%,#a07840 100%)',
+
+  // lighting
+  'clear structural daylight':    'linear-gradient(160deg,#d8dce0 0%,#e8ecf0 50%,#c8ccd0 100%)',
+  'high-contrast architectural lighting': 'linear-gradient(135deg,#f0f4f8 0%,#808890 50%,#101418 100%)',
+  'golden hour sunset':           'linear-gradient(160deg,#e8981e 0%,#d06010 40%,#f0b840 100%)',
+  'bright midday':                'linear-gradient(180deg,#e0e8f0 0%,#eef4fc 50%,#d0dce8 100%)',
+  'soft morning light':           'linear-gradient(160deg,#f0e0c8 0%,#e8d0b0 50%,#f4e4cc 100%)',
+  'cloudy cinematic mood':        'linear-gradient(160deg,#707880 0%,#606870 50%,#808890 100%)',
+  'rainy reflective mood':        'linear-gradient(160deg,#3a4250 0%,#505870 50%,#2a3240 100%)',
+  'blue hour evening':            'linear-gradient(160deg,#0a1828 0%,#182848 40%,#080e18 100%)',
+  'dramatic sunset':              'linear-gradient(160deg,#a83010 0%,#d04820 40%,#e87030 100%)',
+  'luxury night lighting':        'linear-gradient(160deg,#080c10 0%,#4a90c4 40%,#040608 100%)',
+  'festive retail lighting':      'linear-gradient(160deg,#101418 0%,rgba(255,200,50,0.8) 30%,rgba(74,144,196,0.7) 60%,#080c10 100%)',
+  'neutral daylight':             'linear-gradient(160deg,#c8ccd0 0%,#d8dce0 50%,#b8bcc0 100%)',
+};
+
+const COLOR_SWATCHES = {
+  'corporate silver': '#a8b0b8', 'black and glass modern': '#1a1e22',
+  'warm stone and bronze': '#9a7850', 'white minimal': '#f0eee8',
+  'charcoal premium': '#303438', 'blue glass tower': '#2a5878',
+  'beige urban': '#c8b890', 'luxury gold accents': '#9a7830',
+  'industrial gray': '#606870', 'oxidized copper patina': '#5a8070',
+  'coastal bright palette': '#5a90b0',
+};
+
+// ══════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════
+const DATA = {
+  facade:       ['curtain wall glass','fritted low-e glazing','reflective glass façade','sintered stone slabs','dekton','photo-catalytic concrete','unitized glass system','aluminum composite panels','exposed concrete','limestone cladding','granite panels','basalt stone','anthracite panels','steel façade system','terracotta rainscreen','modern stucco','brick façade','perforated metal skin','ceramic façade panels','mixed glass and stone','luxury composite façade','double-skin façade','aluminum cladding','heavy textured stone'],
+  accent:       ['brushed aluminum fins','anodized gold fins','perforated copper mesh','bronze metal strips','black steel frames','vertical louvers','wood-look aluminum battens','kinetic facade elements','LED feature bands','textured stone frames','architectural screens','feature canopy cladding','HPL panels','decorative mesh panels','illuminated façade strips','expanded metal mesh','timber-look soffits'],
+  color:        ['corporate silver','black and glass modern','warm stone and bronze','white minimal','charcoal premium','blue glass tower','beige urban','luxury gold accents','industrial gray','oxidized copper patina','coastal bright palette'],
+  windowSystem: ['full curtain wall','punched windows','ribbon windows','frameless glazing','structural glazing','slim aluminum frames','u-channel glass','unitized curtain wall','storefront glazing'],
+  glass:        ['clear glass','fritted glass patterns','reflective blue glass','smoked glass','bronze tinted glass','low-e glass','mirrored façade','privacy glazing','translucent ETFE pillows','double glazing with realistic reflections'],
+  shading:      ['none','vertical fins','horizontal louvers','brise soleil','recessed glazing','sun breakers','perforated screens','canopy shading','dynamic façade shading'],
+  entrance:     ['grand glass lobby','double-height corporate entrance','retail glazed entrance','luxury hotel-style arrival','revolving door entrance','plaza entrance','branded office entry','covered drop-off canopy'],
+  groundFloor:  ['retail shops','office lobby','showroom frontage','café frontage','bank branch','reception hall','mixed-use podium','restaurant terrace','commercial arcade','parking access'],
+  door:         ['automatic sliding glass doors','revolving doors','pivot glass doors','framed aluminum commercial doors','bronze statement entry'],
+  roof:         ['flat roof modern','screened mechanical roof','rooftop restaurant','sky lounge','green roof','solar panel roof','helipad style roof','terrace deck','corporate rooftop signage zone','luxury rooftop pool'],
+  location:     ['Beirut CBD street','urban commercial avenue','downtown city center','business district','financial district','shopping boulevard','coastal marina district','suburban commercial zone','mixed-use urban block','Gulf business district','European city center'],
+  surroundings: ['Wide sidewalks','Urban paving','Curbs and crosswalks','Street trees','Palm trees','Planters','Outdoor seating','Plaza space','Parked cars','Luxury cars','Taxis','Delivery vans','Pedestrians','Business people','Shoppers','Street lighting','Traffic signals','Benches','Bus stop','Neighboring buildings matching scale','Clean roads','Urban furniture','Storefront signs','Brand-neutral commercial signage'],
+  lighting:     ['clear structural daylight','high-contrast architectural lighting','golden hour sunset','bright midday','soft morning light','cloudy cinematic mood','rainy reflective mood','blue hour evening','dramatic sunset','luxury night lighting','festive retail lighting','neutral daylight'],
+  camera:       ['eye-level street perspective','corner hero angle','frontal façade perspective','aerial 45-degree','pedestrian entrance close-up','wide boulevard scene','skyline perspective','side elevation perspective','plaza eye-level view'],
+};
+
+// Step definitions
+const STEPS = [
+  { key: 'facade',       title: 'Main Façade Material',    subtitle: 'Primary skin of the building',     type: 'cards',       multi: false },
+  { key: 'accent',       title: 'Accent Materials',        subtitle: 'Secondary elements & details',     type: 'cards',       multi: true  },
+  { key: 'color',        title: 'Color Palette',           subtitle: 'Overall tonal direction',          type: 'color',       multi: false },
+  { key: 'windowSystem', title: 'Window System',           subtitle: 'Glazing configuration',            type: 'cards',       multi: false },
+  { key: 'glass',        title: 'Glass Type',              subtitle: 'Transparency & finish',            type: 'cards',       multi: false },
+  { key: 'shading',      title: 'Shading Elements',        subtitle: 'Solar control features',           type: 'cards',       multi: false },
+  { key: 'entrance',     title: 'Main Entrance',           subtitle: 'Lobby & arrival experience',       type: 'chips',       multi: false },
+  { key: 'groundFloor',  title: 'Ground Floor Use',        subtitle: 'Activation at street level',       type: 'chips',       multi: false },
+  { key: 'door',         title: 'Door Style',              subtitle: 'Entry door type',                  type: 'cards',       multi: false },
+  { key: 'roof',         title: 'Roof Design',             subtitle: 'Top-of-building treatment',        type: 'chips',       multi: false },
+  { key: 'location',     title: 'Site Context',            subtitle: 'Urban setting & locale',           type: 'chips',       multi: false },
+  { key: 'surroundings', title: 'Surroundings',            subtitle: 'Street-level environment',         type: 'surroundings',multi: true  },
+  { key: 'lighting',     title: 'Lighting Mood',           subtitle: 'Time of day & atmosphere',         type: 'cards',       multi: false },
+  { key: 'camera',       title: 'Camera View',             subtitle: 'Compositional angle',              type: 'chips',       multi: false },
+];
+
+const CARD_KEYS = ['facade','accent','windowSystem','glass','shading','door','lighting'];
+const state = {};
+STEPS.forEach(s => { state[s.key] = s.multi ? [] : null; });
+
+// ══════════════════════════════════════════════════════
+// VIDEO PROMPT MODE
+// ══════════════════════════════════════════════════════
+var outputMode = 'image';
+var SUBJECT_DEFAULT = 'commercial building';
+var AUDIO_AMBIENCE = 'light wind, distant city ambience, soft street tones';
+var VIDEO_CAMERAS = {
+  orbit: [
+    'aerial drone orbit that circles the building in one unbroken move, revealing the full facade and glazing',
+    'rising crane reveal that lifts up the full height of the tower',
+    'slow push-in toward the main entrance and lobby',
+    'high descending drone that settles from a wide skyline view down to street level',
+    'lateral tracking glide passing along the curtain wall'
+  ],
+  keyframe: [
+    'a slow aerial drone arc traveling from the first angle to the last',
+    'a push from a wide establishing view to a close facade detail',
+    'a crane rise connecting the two framed views',
+    'a sweeping orbit connecting the opening and closing angles'
+  ]
+};
+var videoState = { mode: 'orbit', ratio: '16:9', camera: 0 };
+
+function vCap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function fillVideoCameras(){
+  var sel = document.getElementById('vpCamera');
+  var list = VIDEO_CAMERAS[videoState.mode];
+  var html = '';
+  for (var i = 0; i < list.length; i++){ html += '<option value="' + i + '">' + vCap(list[i]) + '</option>'; }
+  sel.innerHTML = html;
+  videoState.camera = 0;
+}
+
+function updateVideoGuide(){
+  var g = document.getElementById('vpGuide');
+  if (videoState.mode === 'orbit'){
+    g.innerHTML = '<b>Image slots:</b> upload all 2&ndash;3 renders as plain reference images. Materials come from the images, so the text stays lean.';
+  } else {
+    g.innerHTML = '<b>Image slots:</b> set image 1 as the <b>first frame</b> and the last render as the <b>final frame</b>. A third image (if any) is a content reference.';
+  }
+}
+
+function setOutputMode(m){
+  outputMode = m;
+  document.getElementById('vpModeImage').classList.toggle('active', m === 'image');
+  document.getElementById('vpModeVideo').classList.toggle('active', m === 'video');
+  document.getElementById('vpControls').classList.toggle('show', m === 'video');
+  var tag = document.querySelector('.output-model-tag');
+  if (tag){ tag.textContent = (m === 'video') ? 'Veo 3.1 / Gemini Omni' : 'Gemini \u00b7 Imagen'; }
+  updateOutput();
+}
+
+function setVideoMode(m){
+  videoState.mode = m;
+  var btns = document.querySelectorAll('.vp-seg');
+  for (var i = 0; i < btns.length; i++){ btns[i].classList.toggle('active', btns[i].getAttribute('data-vmode') === m); }
+  fillVideoCameras();
+  updateVideoGuide();
+  updateOutput();
+}
+
+function setVideoRatio(r){
+  videoState.ratio = r;
+  var btns = document.querySelectorAll('.vp-ratio');
+  for (var i = 0; i < btns.length; i++){ btns[i].classList.toggle('active', btns[i].getAttribute('data-vr') === r); }
+  updateOutput();
+}
+
+function onVideoField(){ updateOutput(); }
+
+function buildVideoPromptLines(){
+  var loc = state.location ? (' in ' + state.location) : '';
+  var subjEl = document.getElementById('vpSubject');
+  var subject = (subjEl && subjEl.value.trim()) ? subjEl.value.trim() : SUBJECT_DEFAULT;
+  var subjectFull = subject + loc;
+  var list = VIDEO_CAMERAS[videoState.mode];
+  var cam = list[videoState.camera] || list[0];
+  var intro;
+  if (videoState.mode === 'orbit'){
+    intro = 'The reference images are the SAME building shown from different angles \u2014 treat them as one consistent structure, not separate buildings. Continuous cinematic ' + cam + ' of a single ' + subjectFull + '.';
+  } else {
+    intro = 'Use the FIRST reference image as the opening frame and the LAST as the closing frame. They are the SAME ' + subjectFull + '. Generate one continuous camera move between the two views: ' + cam + '.';
+  }
+  var parts = [intro];
+  var inheritEl = document.getElementById('vpInheritLight');
+  if (inheritEl && inheritEl.checked && state.lighting){ parts.push(vCap(state.lighting) + '.'); }
+  var q = ['photorealistic, high detail'];
+  if (document.getElementById('vpGeo').checked) q.push('stable geometry, no morphing or warping of the structure');
+  if (document.getElementById('vpNoText').checked) q.push('no text');
+  if (document.getElementById('vpNoPeople').checked) q.push('no people');
+  parts.push(vCap(q.join(', ')) + '.');
+  if (document.getElementById('vpAudio').checked) parts.push('Subtle native ambient audio: ' + AUDIO_AMBIENCE + '.');
+  var pEl = document.getElementById('vpPacing');
+  var pacing = pEl ? pEl.value : 'slow, premium real-estate pacing';
+  var ratio = videoState.ratio;
+  parts.push(vCap(pacing) + '. ' + ratio + (ratio === '9:16' ? ' vertical' : '') + '.');
+  return [parts.join(' ')];
+}
+
+function renderVideoOutput(){
+  var lines = buildVideoPromptLines();
+  var text = lines.join('\n');
+  var words = text.split(/\s+/).filter(Boolean).length;
+  document.getElementById('wordCount').textContent = words + ' words';
+  document.getElementById('selectionCount').textContent = 'video mode';
+  var box = document.getElementById('outputBox');
+  box.innerHTML = '';
+  var p = document.createElement('p');
+  p.style.cssText = 'margin-bottom:4px;color:rgba(255,255,255,0.82);line-height:1.7;';
+  p.textContent = text;
+  box.appendChild(p);
+}
+
+function initVideoUI(){
+  var subjEl = document.getElementById('vpSubject');
+  if (subjEl) subjEl.value = SUBJECT_DEFAULT;
+  fillVideoCameras();
+  updateVideoGuide();
+}
+
+// ══════════════════════════════════════════════════════
+// BUILD WIZARD
+// ══════════════════════════════════════════════════════
+function buildWizard() {
+  const container = document.getElementById('wizardSteps');
+  STEPS.forEach((step, idx) => {
+    const stepEl = document.createElement('div');
+    stepEl.className = 'step';
+    stepEl.id = `step-${step.key}`;
+    stepEl.dataset.key = step.key;
+
+    stepEl.innerHTML = `
+      <div class="step-header" onclick="toggleStep('${step.key}')">
+        <div class="step-num">${idx + 1}</div>
+        <div>
+          <div class="step-title">${step.title}</div>
+          <div class="step-subtitle">${step.subtitle}</div>
+        </div>
+        <div class="step-badge empty" id="badge-${step.key}">—</div>
+        <svg class="step-chevron" viewBox="0 0 18 18" fill="none">
+          <path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="step-body" id="body-${step.key}">
+        <div class="step-hint">${step.multi ? 'Multi-select' : 'Single select'}</div>
+        <div id="content-${step.key}"></div>
+      </div>`;
+
+    container.appendChild(stepEl);
+    buildStepContent(step);
+  });
+
+  // open first step by default
+  toggleStep('facade');
+}
+
+function buildStepContent(step) {
+  const container = document.getElementById(`content-${step.key}`);
+  if (!container) return;
+
+  if (step.key === 'surroundings') {
+    const qActns = document.createElement('div');
+    qActns.className = 'quick-actions';
+    qActns.innerHTML = `<button class="quick-btn" onclick="selectAllSurroundings()">Select All</button><button class="quick-btn" onclick="clearSurroundings()">Clear All</button>`;
+    container.appendChild(qActns);
+    const grid = document.createElement('div');
+    grid.className = 'surroundings-grid';
+    DATA[step.key].forEach(val => {
+      const el = document.createElement('div');
+      el.className = 'check-item';
+      el.dataset.key = step.key; el.dataset.val = val;
+      el.innerHTML = `<div class="check-box"><span class="check-tick">✓</span></div><span class="check-label">${val}</span>`;
+      el.addEventListener('click', () => toggleMulti(step.key, val, el));
+      grid.appendChild(el);
+    });
+    container.appendChild(grid);
+
+  } else if (step.key === 'color') {
+    const grid = document.createElement('div');
+    grid.className = 'options-grid';
+    DATA[step.key].forEach(val => {
+      const el = document.createElement('div');
+      el.className = 'color-chip';
+      el.dataset.key = step.key; el.dataset.val = val;
+      const sw = document.createElement('div');
+      sw.className = 'color-swatch';
+      sw.style.background = COLOR_SWATCHES[val] || '#888';
+      el.appendChild(sw);
+      el.appendChild(document.createTextNode(val));
+      el.addEventListener('click', () => selectSingle(step.key, val));
+      grid.appendChild(el);
+    });
+    container.appendChild(grid);
+
+  } else if (CARD_KEYS.includes(step.key)) {
+    const grid = document.createElement('div');
+    grid.className = 'cards-grid';
+    DATA[step.key].forEach((val, idx) => {
+      const card = document.createElement('div');
+      card.className = 'mat-card';
+      card.dataset.key = step.key; card.dataset.val = val;
+
+      const imgWrap = document.createElement('div');
+      imgWrap.className = 'card-img-wrap';
+      imgWrap.style.position = 'relative';
+
+      // gradient fallback layer (always present behind image)
+      const bg = document.createElement('div');
+      bg.className = 'card-swatch-bg';
+      bg.style.background = VISUALS[val] || 'linear-gradient(135deg,#ddd8d0 0%,#c0bcb4 100%)';
+      imgWrap.appendChild(bg);
+
+      // real image on top
+      const imgEl = document.createElement('img');
+      imgEl.className = 'card-swatch img-swatch';
+      imgEl.alt = val;
+      imgEl.loading = 'lazy';
+      imgWrap.appendChild(imgEl);
+
+      const chk = document.createElement('div');
+      chk.className = 'card-check'; chk.textContent = '✓';
+      imgWrap.appendChild(chk);
+
+      const lbl = document.createElement('div');
+      lbl.className = 'card-label'; lbl.textContent = val;
+
+      card.appendChild(imgWrap);
+      card.appendChild(lbl);
+      // hover preview (feature 2)
+      const previewKeyword = IMG_KEYWORDS[val] || val + ' architecture material';
+      const previewSeed = step.key.charCodeAt(0) * 100 + idx;
+      const previewGrad = VISUALS[val] || '';
+      card.addEventListener('mouseenter', () => showCardPreview(card, val, previewKeyword, previewGrad, previewSeed));
+      card.addEventListener('mouseleave', hideCardPreview);
+
+      card.addEventListener('click', () => step.multi ? toggleMulti(step.key, val, card) : selectSingle(step.key, val));
+      grid.appendChild(card);
+
+      // lazy load image using IntersectionObserver
+      const keyword = IMG_KEYWORDS[val] || val + ' architecture material';
+      const seed = step.key.charCodeAt(0) * 100 + idx;
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            loadCardImage(imgEl, bg, keyword, VISUALS[val] || '', seed);
+            observer.disconnect();
+          }
+        });
+      }, { rootMargin: '200px' });
+      observer.observe(card);
+    });
+    container.appendChild(grid);
+
+  } else {
+    // plain chips
+    const grid = document.createElement('div');
+    grid.className = 'options-grid';
+    DATA[step.key].forEach(val => {
+      const el = document.createElement('div');
+      el.className = 'chip';
+      el.dataset.key = step.key; el.dataset.val = val;
+      el.textContent = val;
+      el.addEventListener('click', () => step.multi ? toggleMulti(step.key, val, el) : selectSingle(step.key, val));
+      grid.appendChild(el);
+    });
+    container.appendChild(grid);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// ACCORDION
+// ══════════════════════════════════════════════════════
+function toggleStep(key) {
+  const el = document.getElementById(`step-${key}`);
+  const isOpen = el.classList.contains('open');
+  el.classList.toggle('open', !isOpen);
+}
+function expandAll() {
+  STEPS.forEach(s => document.getElementById(`step-${s.key}`).classList.add('open'));
+}
+function collapseAll() {
+  STEPS.forEach(s => document.getElementById(`step-${s.key}`).classList.remove('open'));
+}
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+function selectSingle(key, val) {
+  state[key] = state[key] === val ? null : val;
+  document.querySelectorAll(`[data-key="${key}"]`).forEach(el => {
+    const isSel = el.dataset.val === state[key];
+    el.classList.toggle('selected', isSel);
+  });
+  updateBadge(key);
+  updateOutput();
+  autoAdvance(key);
+}
+
+function toggleMulti(key, val, el) {
+  const idx = state[key].indexOf(val);
+  if (idx > -1) {
+    state[key].splice(idx, 1);
+    el.classList.remove('selected', 'checked');
+  } else {
+    state[key].push(val);
+    el.classList.add(key === 'surroundings' ? 'checked' : 'selected');
+  }
+  updateBadge(key);
+  updateOutput();
+}
+
+function selectAllSurroundings() {
+  state['surroundings'] = [...DATA['surroundings']];
+  document.querySelectorAll('[data-key="surroundings"]').forEach(el => el.classList.add('checked'));
+  updateBadge('surroundings');
+  updateOutput();
+}
+function clearSurroundings() {
+  state['surroundings'] = [];
+  document.querySelectorAll('[data-key="surroundings"]').forEach(el => el.classList.remove('checked'));
+  updateBadge('surroundings');
+  updateOutput();
+}
+
+function autoAdvance(key) {
+  // after selecting a single item, open the next step
+  const idx = STEPS.findIndex(s => s.key === key);
+  if (idx >= 0 && idx < STEPS.length - 1 && !STEPS[idx].multi) {
+    const curr = document.getElementById(`step-${key}`);
+    curr.classList.remove('open');
+    const next = document.getElementById(`step-${STEPS[idx + 1].key}`);
+    next.classList.add('open');
+    // scroll to next
+    setTimeout(() => {
+      const rect = next.getBoundingClientRect();
+      const panel = next.closest('.wizard-panel');
+      panel.scrollBy({ top: rect.top - 80, behavior: 'smooth' });
+    }, 100);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// BADGE
+// ══════════════════════════════════════════════════════
+function updateBadge(key) {
+  const badge = document.getElementById(`badge-${key}`);
+  const stepEl = document.getElementById(`step-${key}`);
+  const val = state[key];
+  const isEmpty = Array.isArray(val) ? val.length === 0 : val === null;
+  if (isEmpty) {
+    badge.textContent = '—';
+    badge.className = 'step-badge empty';
+    stepEl.classList.remove('has-selection');
+  } else {
+    const count = Array.isArray(val) ? val.length : 1;
+    badge.textContent = Array.isArray(val) ? `${count} selected` : val.split(' ').slice(0, 3).join(' ') + (val.split(' ').length > 3 ? '…' : '');
+    badge.className = 'step-badge filled';
+    stepEl.classList.add('has-selection');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// PROGRESS
+// ══════════════════════════════════════════════════════
+function countSelections() {
+  let n = 0;
+  STEPS.forEach(s => {
+    const v = state[s.key];
+    if (Array.isArray(v) ? v.length > 0 : v !== null) n++;
+  });
+  return n;
+}
+
+function updateProgress() {
+  const total = STEPS.length;
+  const done = countSelections();
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${done} / ${total}`;
+  document.getElementById('selCount').textContent = done;
+  document.getElementById('fabCount').textContent = done;
+}
+
+// ══════════════════════════════════════════════════════
+// OUTPUT
+// ══════════════════════════════════════════════════════
+function buildPromptLines() {
+  const lines = [];
+  lines.push(`Transform this uploaded Revit commercial building screenshot into a high-end photorealistic architectural render. Closely follow the original geometry, massing, and floor count. Maintain the exact locations of façade openings, structural grid, entrances, window locations, and signage zones, allowing only minor volumetric adjustments necessary to accommodate realistic material thickness (like deep mullions or exterior louvers). Preserve the roof shape and overall architectural intent. Do not change the input aspect ratio.`);
+  lines.push('');
+  lines.push(`Replace the raw Revit appearance with premium commercial materials, refined urban details, realistic surroundings, and strong marketable presence.`);
+  lines.push('');
+  if (state.facade)             lines.push(`Main façade material: ${state.facade}.`);
+  if (state.accent.length)      lines.push(`Accent materials: ${state.accent.join(', ')}.`);
+  if (state.color)              lines.push(`Color palette: ${state.color}.`);
+  if (state.windowSystem)       lines.push(`Window system: ${state.windowSystem}.`);
+  if (state.glass)              lines.push(`Glass type: ${state.glass}.`);
+  if (state.shading)            lines.push(`Shading elements: ${state.shading}.`);
+  if (state.entrance)           lines.push(`Main entrance: ${state.entrance}.`);
+  if (state.groundFloor)        lines.push(`Ground floor use: ${state.groundFloor}.`);
+  if (state.door)               lines.push(`Door style: ${state.door}.`);
+  if (state.roof)               lines.push(`Roof design: ${state.roof}.`);
+  lines.push('');
+  if (state.location)           lines.push(`Set the building in: ${state.location}.`);
+  if (state.surroundings.length) {
+    lines.push('');
+    lines.push(`Add realistic commercial surroundings including: ${state.surroundings.join(', ')}.`);
+  }
+  lines.push('');
+  if (state.lighting)           lines.push(`Lighting mood: ${state.lighting}.`);
+  if (state.camera)             lines.push(`Camera view: ${state.camera}.`);
+  lines.push('');
+  lines.push(`Rendering style: ultra realistic, premium commercial visualization, high detail, sharp textures, realistic glass reflections, cinematic shadows, polished materials, architectural magazine quality, developer marketing render, elegant composition, strong street presence.`);
+  lines.push('');
+  lines.push(`Important: Follow original geometry closely, allowing for material thickness. Keep all floors exactly as original. Keep façade proportions unchanged. Keep entrance positions unchanged. Keep structural rhythm unchanged. Do not invent extra towers or masses. Improve realism only. Maintain clean scale and perspective. Respect original architectural design. Do not change the input aspect ratio.`);
+  lines.push('');
+  lines.push(`Use premium commercial real estate marketing style suitable for billboard, brochure, website, leasing campaign, and investor presentation.`);
+  return lines;
+}
+
+function updateOutput() {
+  updateProgress();
+  updatePicksStrip();
+  if (outputMode === 'video') { renderVideoOutput(); return; }
+  const lines = buildPromptLines();
+  const text = lines.join('\n');
+
+  // word count
+  const words = text.split(/\s+/).filter(Boolean).length;
+  document.getElementById('wordCount').textContent = `${words} words`;
+
+  const n = countSelections();
+  document.getElementById('selectionCount').textContent = `${n} selection${n !== 1 ? 's' : ''}`;
+
+  // render with highlighted selections
+  const outputBox = document.getElementById('outputBox');
+  outputBox.innerHTML = '';
+
+  // Build highlighted output
+  const selectionValues = [];
+  STEPS.forEach(s => {
+    const v = state[s.key];
+    if (Array.isArray(v)) v.forEach(x => selectionValues.push(x));
+    else if (v) selectionValues.push(v);
+  });
+
+  // Sort by length desc so longer matches take precedence
+  selectionValues.sort((a, b) => b.length - a.length);
+
+  lines.forEach((line, li) => {
+    if (line === '') {
+      outputBox.appendChild(document.createElement('br'));
+      return;
+    }
+    const p = document.createElement('p');
+    p.style.cssText = 'margin-bottom:4px;';
+    let remaining = line;
+    let html = '';
+
+    // Highlight any selection values
+    let tempLine = line;
+    selectionValues.forEach(v => {
+      if (tempLine.includes(v)) {
+        tempLine = tempLine.split(v).join(`__SEL__${v}__ENDSEL__`);
+      }
+    });
+
+    const parts = tempLine.split(/(__SEL__|__ENDSEL__)/);
+    let inSel = false;
+    parts.forEach(part => {
+      if (part === '__SEL__') { inSel = true; return; }
+      if (part === '__ENDSEL__') { inSel = false; return; }
+      if (inSel) {
+        html += `<span style="color:#fff;font-weight:500;">${part}</span>`;
+      } else {
+        html += `<span style="color:rgba(255,255,255,0.45);">${part}</span>`;
+      }
+    });
+    p.innerHTML = html;
+    outputBox.appendChild(p);
+  });
+}
+
+function printPrompt() {
+  // Save current state to localStorage so the print page can read it
+  localStorage.setItem('revit_print_state', JSON.stringify(state));
+  window.open('Revit Prompt Builder v2-print.html', '_blank');
+}
+
+function copyPrompt() {
+  const lines = (outputMode === 'video') ? buildVideoPromptLines() : buildPromptLines();
+  const text = lines.join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7L5.5 10L11.5 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Copied!`;
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="4" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 4V2.5A1.5 1.5 0 015.5 1H11.5A1.5 1.5 0 0113 2.5V8.5A1.5 1.5 0 0111.5 10H10" stroke="currentColor" stroke-width="1.5"/></svg> Copy Prompt`;
+      btn.classList.remove('copied');
+    }, 2400);
+  });
+}
+
+function resetAll() {
+  STEPS.forEach(s => { state[s.key] = s.multi ? [] : null; });
+  document.querySelectorAll('.mat-card,.chip,.color-chip').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.check-item').forEach(el => el.classList.remove('checked'));
+  STEPS.forEach(s => updateBadge(s.key));
+  updateOutput();
+  updatePicksStrip();
+}
+
+// ══════════════════════════════════════════════════════
+// MOBILE SHEET
+// ══════════════════════════════════════════════════════
+function toggleSheet() {
+  const panel = document.getElementById('outputPanel');
+  panel.classList.contains('open') ? closeSheet() : openSheet();
+}
+function openSheet() {
+  document.getElementById('outputPanel').classList.add('open');
+  document.getElementById('backdrop').classList.add('visible');
+  const fab = document.getElementById('fabBtn');
+  fab.style.opacity = '0'; fab.style.pointerEvents = 'none';
+}
+function closeSheet() {
+  document.getElementById('outputPanel').classList.remove('open');
+  document.getElementById('backdrop').classList.remove('visible');
+  const fab = document.getElementById('fabBtn');
+  fab.style.opacity = '1'; fab.style.pointerEvents = 'auto';
+}
+
+// ══════════════════════════════════════════════════════
+// TWEAKS
+// ══════════════════════════════════════════════════════
+function closeTweaks() {
+  document.getElementById('tweaksPanel').classList.remove('visible');
+  window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+}
+function setCardSize(sz) {
+  const sizes = { sm: { w: '110px', h: '72px' }, md: { w: '136px', h: '90px' }, lg: { w: '164px', h: '108px' } };
+  const { w, h } = sizes[sz] || sizes.md;
+  document.documentElement.style.setProperty('--card-w', w);
+  document.documentElement.style.setProperty('--card-img-h', h);
+  document.querySelectorAll('[onclick^="setCardSize"]').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[onclick="setCardSize('${sz}')"]`).classList.add('active');
+}
+function setTheme(t) {
+  const themes = {
+    warm: { bg:'#EDF2EE', bg2:'#E1EBE3', surface:'#FFFFFF', surface2:'#E8F0EA', border:'#C8DDD0', border2:'#AECFB8', text:'#111C15', accent:'#2D6044' },
+    cool: { bg:'#EEF3F8', bg2:'#E2EAF2', surface:'#FFFFFF', surface2:'#E8EFF8', border:'#C8D8E8', border2:'#A8C0D8', text:'#141C28', accent:'#2558A0' },
+    dark: { bg:'#0C1410', bg2:'#121E16', surface:'#162A1E', surface2:'#1A3022', border:'#1E3828', border2:'#2A5038', text:'#C8E0D0', accent:'#4A9E6A' },
+  };
+  const th = themes[t] || themes.warm;
+  const root = document.documentElement;
+  Object.entries(th).forEach(([k, v]) => root.style.setProperty(`--${k}`, v));
+  document.querySelectorAll('[onclick^="setTheme"]').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[onclick="setTheme('${t}')"]`).classList.add('active');
+}
+
+// Tweaks protocol
+window.addEventListener('message', e => {
+  if (e.data?.type === '__activate_edit_mode')   document.getElementById('tweaksPanel').classList.add('visible');
+  if (e.data?.type === '__deactivate_edit_mode') document.getElementById('tweaksPanel').classList.remove('visible');
+});
+window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+
+// ══════════════════════════════════════════════════════
+// FEATURE 2: CARD HOVER PREVIEW POPUP
+// ══════════════════════════════════════════════════════
+let previewTimeout = null;
+const popup = document.getElementById('cardPreviewPopup');
+
+function showCardPreview(card, val, keyword, gradient, seed) {
+  clearTimeout(previewTimeout);
+  previewTimeout = setTimeout(() => {
+    // Position popup
+    const rect = card.getBoundingClientRect();
+    const popW = 220, popH = 180;
+    let left = rect.right + 10;
+    let top  = rect.top + rect.height / 2 - popH / 2;
+    if (left + popW > window.innerWidth - 10) left = rect.left - popW - 10;
+    if (top < 10) top = 10;
+    if (top + popH > window.innerHeight - 10) top = window.innerHeight - popH - 10;
+
+    popup.style.left = left + 'px';
+    popup.style.top  = top + 'px';
+
+    // set content
+    const bgEl  = document.getElementById('cardPreviewBg');
+    const imgEl = document.getElementById('cardPreviewImg');
+    const nameEl = document.getElementById('cardPreviewName');
+    bgEl.style.background = gradient || '';
+    nameEl.textContent = val;
+    imgEl.style.opacity = '0';
+    imgEl.classList.remove('loaded');
+
+    // Show a sharp photo in the hover preview only if a custom URL is set.
+    const previewCustom = IMG_URLS[val];
+    if (previewCustom && previewCustom.trim() !== '') {
+      const url = previewCustom.trim();
+      const tmp = new Image();
+      tmp.onload = () => {
+        imgEl.src = url;
+        imgEl.style.opacity = '1';
+      };
+      tmp.src = url;
+    }
+
+    popup.classList.add('visible');
+  }, 320);
+}
+
+function hideCardPreview() {
+  clearTimeout(previewTimeout);
+  popup.classList.remove('visible');
+}
+
+// ══════════════════════════════════════════════════════
+// FEATURE 4: SELECTED THUMBNAILS STRIP
+// ══════════════════════════════════════════════════════
+function updatePicksStrip() {
+  const row   = document.getElementById('picksThumbsRow');
+  const empty = document.getElementById('picksEmpty');
+  row.innerHTML = '';
+
+  const allPicks = []; // { val, key }
+  STEPS.forEach(s => {
+    if (!CARD_KEYS.includes(s.key)) return; // only card sections
+    const v = state[s.key];
+    if (Array.isArray(v)) v.forEach(x => allPicks.push({ val: x, key: s.key }));
+    else if (v) allPicks.push({ val: v, key: s.key });
+  });
+
+  if (allPicks.length === 0) {
+    const em = document.createElement('div');
+    em.className = 'picks-empty';
+    em.textContent = '— none yet';
+    row.appendChild(em);
+    return;
+  }
+
+  allPicks.forEach(({ val, key }, idx) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'pick-thumb';
+
+    const bg = document.createElement('div');
+    bg.className = 'pick-thumb-bg';
+    bg.style.background = VISUALS[val] || '#aaa';
+    thumb.appendChild(bg);
+
+    const img = document.createElement('img');
+    img.alt = val;
+    const customUrl = IMG_URLS[val];
+    if (customUrl && customUrl.trim() !== '') {
+      const url = customUrl.trim();
+      const tmp = new Image();
+      tmp.onload = () => { img.src = url; img.classList.add('loaded'); };
+      tmp.src = url;
+    }
+    thumb.appendChild(img);
+
+    const tip = document.createElement('div');
+    tip.className = 'pick-thumb-tip';
+    tip.textContent = val;
+    thumb.appendChild(tip);
+
+    row.appendChild(thumb);
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// FEATURE 5: SAVE / LOAD PRESETS
+// ══════════════════════════════════════════════════════
+const PRESETS_KEY = 'revit_prompt_presets_v2';
+
+function loadPresetsFromStorage() {
+  try { return JSON.parse(localStorage.getItem(PRESETS_KEY) || '[]'); }
+  catch { return []; }
+}
+function savePresetsToStorage(presets) {
+  localStorage.setItem(PRESETS_KEY, JSON.stringify(presets));
+}
+
+function savePreset() {
+  const name = prompt('Name this preset:', `Preset ${loadPresetsFromStorage().length + 1}`);
+  if (!name) return;
+  const presets = loadPresetsFromStorage();
+  presets.push({ name, state: JSON.parse(JSON.stringify(state)) });
+  savePresetsToStorage(presets);
+  renderPresetChips();
+}
+
+function loadPreset(idx) {
+  const presets = loadPresetsFromStorage();
+  const p = presets[idx];
+  if (!p) return;
+  // restore state
+  Object.keys(p.state).forEach(k => { state[k] = p.state[k]; });
+  // update UI
+  STEPS.forEach(s => {
+    const v = state[s.key];
+    if (s.key === 'surroundings') {
+      document.querySelectorAll('[data-key="surroundings"]').forEach(el => {
+        el.classList.toggle('checked', Array.isArray(v) && v.includes(el.dataset.val));
+      });
+    } else if (Array.isArray(v)) {
+      document.querySelectorAll(`[data-key="${s.key}"]`).forEach(el => {
+        el.classList.toggle('selected', v.includes(el.dataset.val));
+      });
+    } else {
+      document.querySelectorAll(`[data-key="${s.key}"]`).forEach(el => {
+        el.classList.toggle('selected', el.dataset.val === v);
+      });
+    }
+    updateBadge(s.key);
+  });
+  updateOutput();
+  updatePicksStrip();
+}
+
+function deletePreset(idx, e) {
+  e.stopPropagation();
+  const presets = loadPresetsFromStorage();
+  presets.splice(idx, 1);
+  savePresetsToStorage(presets);
+  renderPresetChips();
+}
+
+function renderPresetChips() {
+  const container = document.getElementById('presetChips');
+  container.innerHTML = '';
+  const presets = loadPresetsFromStorage();
+  presets.forEach((p, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'preset-chip';
+    chip.onclick = () => loadPreset(idx);
+    chip.innerHTML = `${p.name}<span class="preset-del" onclick="deletePreset(${idx}, event)">×</span>`;
+    container.appendChild(chip);
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+buildWizard();
+renderPresetChips();
+initVideoUI();
+updateOutput();
+updatePicksStrip();
+</script>
+</body>
+</html>
