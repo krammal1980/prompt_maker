@@ -1,0 +1,2641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revit Residential Building — Prompt Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=IBM+Plex+Mono:wght@300;400;500&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- ===== FIREBASE SYNC =====
+     Paste the SAME firebaseConfig you use in the Prompt Library below.
+     Left as-is, the page runs localStorage-only. -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set, get, onValue, remove }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBYXv7aVj4OPakGFs5Da4rTbyfZMKQIUsU",
+    authDomain: "prompt-studio-c9fa4.firebaseapp.com",
+    databaseURL: "https://prompt-studio-c9fa4-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "prompt-studio-c9fa4",
+    storageBucket: "prompt-studio-c9fa4.firebasestorage.app",
+    messagingSenderId: "570949395216",
+    appId: "1:570949395216:web:56c5c1a174a6910e613b95"
+  };
+
+  if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY_HERE") {
+    try {
+      const app = initializeApp(firebaseConfig);
+      const db  = getDatabase(app);
+      window.fbSet    = (path, data) => set(ref(db, path), data);
+      window.fbGet    = (path) => get(ref(db, path)).then(s => s.exists() ? s.val() : null);
+      window.fbRemove = (path) => remove(ref(db, path));
+      window.fbListen = (path, cb) => onValue(ref(db, path),
+        snap => cb(snap.exists() ? snap.val() : null),
+        err => console.warn('Firebase listen error:', err));
+      window.firebaseReady = true;
+      document.dispatchEvent(new Event('firebase-ready'));
+    } catch (e) {
+      console.warn('Firebase init failed, running localStorage-only:', e);
+    }
+  }
+</script>
+
+<style>
+/* ══════════════════════════════════════
+   TOKENS
+══════════════════════════════════════ */
+:root {
+  --bg:          #0A0E13;
+  --bg2:         #0F141B;
+  --surface:     #141A23;
+  --surface2:    #19212C;
+  --border:      #233140;
+  --border2:     #304254;
+  --text:        #D4E2F0;
+  --text-mid:    #88A2BC;
+  --text-dim:    #4C627A;
+  --accent:      #3E7CC0;
+  --accent-light:#6FAEE6;
+  --accent-dim:  rgba(62,124,192,0.10);
+  --accent-glow: rgba(62,124,192,0.22);
+  --ok:          #3E7CC0;
+  --radius:      8px;
+  --radius-lg:   14px;
+  --card-w:      136px;
+  --card-img-h:  90px;
+  --transition:  0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ══════════════════════════════════════
+   RESET + BASE
+══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 400;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══════════════════════════════════════
+   HEADER
+══════════════════════════════════════ */
+.site-header {
+  background: #070A0E;
+  color: var(--bg);
+  padding: 0 40px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+.header-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 22px;
+  font-weight: 300;
+  letter-spacing: 0.01em;
+  color: #fff;
+  line-height: 1;
+}
+.header-logo span { color: var(--accent-light); }
+.header-sep {
+  width: 1px;
+  height: 16px;
+  background: rgba(255,255,255,0.18);
+}
+.header-tag {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 400;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-pill {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.5);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.header-sel-count {
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-family: 'Space Grotesk', sans-serif;
+  min-width: 30px;
+  text-align: center;
+  transition: var(--transition);
+}
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.header-nav a {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  transition: all var(--transition);
+}
+.header-nav a:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.header-nav a.active { color: #fff; background: var(--accent); }
+@media (max-width: 720px) { .header-nav { display: none; } }
+
+/* ══════════════════════════════════════
+   MAIN LAYOUT
+══════════════════════════════════════ */
+.main-layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 58px);
+}
+
+/* ══════════════════════════════════════
+   LEFT PANEL — WIZARD
+══════════════════════════════════════ */
+.wizard-panel {
+  overflow-y: auto;
+  padding: 32px 40px 80px;
+  height: 100%;
+}
+.wizard-panel::-webkit-scrollbar { width: 4px; }
+.wizard-panel::-webkit-scrollbar-track { background: transparent; }
+.wizard-panel::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* progress bar */
+.progress-bar-wrap {
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.progress-bar-track {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  width: 0%;
+}
+.progress-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  min-width: 60px;
+  text-align: right;
+}
+
+/* ══════════════════════════════════════
+   ACCORDION STEP
+══════════════════════════════════════ */
+.step {
+  margin-bottom: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.step.has-selection {
+  border-color: var(--accent);
+}
+.step.open {
+  border-color: var(--border2);
+  box-shadow: 0 4px 24px rgba(26,23,20,0.06);
+}
+.step.open.has-selection {
+  border-color: var(--accent);
+  box-shadow: 0 4px 24px var(--accent-glow);
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--transition);
+}
+.step-header:hover { background: var(--surface2); }
+
+.step-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+.step.has-selection .step-num {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.step-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--text);
+  flex: 1;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+.step-subtitle {
+  font-size: 9.5px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.step-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+.step-badge.empty {
+  background: var(--bg2);
+  color: var(--text-dim);
+}
+.step-badge.filled {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+.step-chevron {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--text-dim);
+  transition: transform var(--transition);
+}
+.step.open .step-chevron { transform: rotate(180deg); }
+
+.step-body {
+  display: none;
+  padding: 4px 20px 20px;
+  border-top: 1px solid var(--border);
+}
+.step.open .step-body { display: block; }
+
+.step-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  margin-bottom: 14px;
+  margin-top: 10px;
+}
+
+/* ══════════════════════════════════════
+   MATERIAL CARDS
+══════════════════════════════════════ */
+.cards-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.mat-card {
+  width: var(--card-w);
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+  position: relative;
+}
+.mat-card:hover {
+  border-color: var(--accent-light);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26,23,20,0.1);
+}
+.mat-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow), 0 6px 20px rgba(26,23,20,0.1);
+  transform: translateY(-2px);
+}
+.mat-card .card-img-wrap {
+  position: relative;
+  width: 100%;
+  height: var(--card-img-h);
+  overflow: hidden;
+}
+.mat-card .card-swatch {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.35s ease;
+  object-fit: cover;
+  display: block;
+}
+.mat-card:hover .card-swatch { transform: scale(1.07); }
+.mat-card .card-swatch.img-swatch {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.35s ease;
+}
+.mat-card .card-swatch.img-swatch.loaded { opacity: 1; }
+.mat-card .card-swatch-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.35s ease;
+}
+.mat-card:hover .card-swatch-bg,
+.mat-card:hover .card-swatch { transform: scale(1.07); }
+/* shimmer loading state */
+.card-img-wrap.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  z-index: 1;
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.mat-card .card-check {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 20px; height: 20px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #fff;
+  font-weight: bold;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(62,124,192,0.4);
+}
+.mat-card.selected .card-check { display: flex; }
+.mat-card .card-label {
+  padding: 7px 8px 9px;
+  font-size: 10.5px;
+  color: var(--text-mid);
+  line-height: 1.35;
+  text-align: center;
+  font-weight: 400;
+}
+.mat-card.selected .card-label {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ══════════════════════════════════════
+   CHIPS
+══════════════════════════════════════ */
+.options-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.chip {
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  color: var(--text-mid);
+  padding: 7px 14px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  transition: all var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  letter-spacing: 0.01em;
+}
+.chip:hover { border-color: var(--accent-light); color: var(--text); background: var(--accent-dim); }
+.chip.selected { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; }
+
+/* ══════════════════════════════════════
+   COLOR CHIPS
+══════════════════════════════════════ */
+.color-chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  color: var(--text-mid);
+  padding: 7px 14px 7px 9px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  transition: all var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.color-chip:hover { border-color: var(--accent-light); color: var(--text); background: var(--accent-dim); }
+.color-chip.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+.color-swatch {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(26,23,20,0.12);
+}
+
+/* ══════════════════════════════════════
+   CHECKBOX ITEMS
+══════════════════════════════════════ */
+.surroundings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 6px;
+}
+.check-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.check-item:hover { border-color: var(--accent-light); background: var(--accent-dim); }
+.check-item.checked { border-color: var(--accent); background: var(--accent-dim); }
+.check-box {
+  width: 16px; height: 16px;
+  border: 1.5px solid var(--border2);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition);
+  background: var(--surface);
+}
+.check-item.checked .check-box { background: var(--accent); border-color: var(--accent); }
+.check-tick { color: #fff; font-size: 10px; font-weight: bold; display: none; }
+.check-item.checked .check-tick { display: block; }
+.check-label { font-size: 12px; color: var(--text-mid); font-weight: 400; }
+.check-item.checked .check-label { color: var(--accent); font-weight: 500; }
+
+.quick-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+.quick-btn {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px; letter-spacing: 0.06em; font-weight: 500;
+  padding: 5px 14px;
+  border-radius: 20px; cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: transparent; color: var(--text-dim);
+  transition: all var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+.quick-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+/* ══════════════════════════════════════
+   OUTPUT PANEL
+══════════════════════════════════════ */
+.output-panel {
+  background: #070A0E;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-left: 1px solid rgba(255,255,255,0.06);
+}
+.output-header {
+  padding: 22px 26px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+.output-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.output-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 20px;
+  font-weight: 300;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+.output-model-tag {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  font-weight: 500;
+}
+.output-meta {
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 0.04em;
+}
+.output-word-count {
+  color: var(--accent-light);
+  font-weight: 500;
+}
+
+.output-box {
+  flex: 1;
+  padding: 20px 26px;
+  overflow-y: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  line-height: 1.9;
+  color: rgba(255,255,255,0.65);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.output-box::-webkit-scrollbar { width: 3px; }
+.output-box::-webkit-scrollbar-track { background: transparent; }
+.output-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* highlighted segments inside prompt */
+.prompt-base { color: rgba(255,255,255,0.45); }
+.prompt-selection { color: #fff; font-weight: 500; }
+.prompt-label { color: var(--accent-light); font-style: italic; }
+
+.output-actions {
+  padding: 14px 26px 18px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.btn-copy {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 13px 20px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: all var(--transition);
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-copy:hover { background: var(--accent-light); }
+.btn-copy.copied { background: var(--ok); }
+.btn-copy svg { flex-shrink: 0; }
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+}
+.btn-secondary {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.45);
+  padding: 10px 16px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: all var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-secondary:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.08); }
+.btn-reset:hover { border-color: rgba(62,124,192,0.4); color: var(--accent-light); background: rgba(62,124,192,0.08); }
+
+/* char count ring */
+.output-ring-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 2px;
+}
+.ring-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 0.06em;
+}
+
+/* ══════════════════════════════════════
+   MOBILE FAB
+══════════════════════════════════════ */
+.fab-prompt { display: none; }
+
+/* ══════════════════════════════════════
+   TWEAKS PANEL
+══════════════════════════════════════ */
+.tweaks-panel {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  right: 424px;
+  width: 260px;
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 40px rgba(26,23,20,0.15);
+  z-index: 500;
+  overflow: hidden;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.tweaks-panel.visible { display: block; }
+.tweaks-header {
+  background: #070A0E;
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tweaks-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 16px;
+  font-weight: 300;
+  color: #fff;
+}
+.tweaks-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color var(--transition);
+}
+.tweaks-close:hover { color: #fff; }
+.tweaks-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; font-family: 'IBM Plex Mono', monospace; }
+.tweak-group {}
+.tweak-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.tweak-options {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tweak-btn {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--bg2);
+  color: var(--text-mid);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.tweak-btn:hover { border-color: var(--accent-light); color: var(--accent); }
+.tweak-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tweak-divider { height: 1px; background: var(--border); margin: 2px 0; }
+
+/* ══════════════════════════════════════
+   CARD HOVER PREVIEW (feature 2)
+══════════════════════════════════════ */
+.card-preview-popup {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  border: 1.5px solid var(--border2);
+  opacity: 0;
+  transform: scale(0.92) translateY(6px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  width: 220px;
+  background: var(--surface);
+}
+.card-preview-popup.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+.card-preview-img-wrap {
+  width: 220px;
+  height: 148px;
+  overflow: hidden;
+  position: relative;
+}
+.card-preview-img-wrap .card-swatch-bg,
+.card-preview-img-wrap img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  position: absolute; inset: 0;
+}
+.card-preview-name {
+  padding: 9px 12px 10px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text);
+  background: var(--surface);
+  letter-spacing: 0.01em;
+}
+
+/* ══════════════════════════════════════
+   SELECTED THUMBNAILS STRIP (feature 4)
+══════════════════════════════════════ */
+.picks-strip {
+  padding: 10px 26px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+.picks-strip-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  margin-bottom: 7px;
+}
+.picks-thumbs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+}
+.pick-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  flex-shrink: 0;
+  cursor: default;
+}
+.pick-thumb-bg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+}
+.pick-thumb img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.pick-thumb img.loaded { opacity: 1; }
+.pick-thumb-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 10;
+  letter-spacing: 0.04em;
+}
+.pick-thumb:hover .pick-thumb-tip { opacity: 1; }
+.picks-empty {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: rgba(255,255,255,0.2);
+  padding-bottom: 10px;
+  letter-spacing: 0.06em;
+}
+
+/* ══════════════════════════════════════
+   PRESETS (feature 5)
+══════════════════════════════════════ */
+.presets-bar {
+  display: flex;
+  gap: 6px;
+  padding: 10px 26px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.presets-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  margin-right: 2px;
+  white-space: nowrap;
+}
+.preset-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.55);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all var(--transition);
+  letter-spacing: 0.04em;
+}
+.preset-chip:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.2); }
+.preset-chip .preset-del {
+  color: rgba(255,255,255,0.3);
+  font-size: 11px;
+  line-height: 1;
+  margin-left: 2px;
+  padding: 0 2px;
+  transition: color var(--transition);
+}
+.preset-chip .preset-del:hover { color: #ff6b6b; }
+.btn-save-preset {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px dashed rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.35);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all var(--transition);
+  letter-spacing: 0.04em;
+}
+.btn-save-preset:hover { border-color: var(--accent-light); color: var(--accent-light); }
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+@media (max-width: 900px) {
+  .main-layout { grid-template-columns: 1fr; height: auto; overflow: visible; }
+  .wizard-panel { padding: 20px 16px 120px; height: auto; }
+  .site-header { padding: 0 16px; }
+
+  .output-panel {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 64vh;
+    border-radius: 18px 18px 0 0;
+    transform: translateY(calc(100% - 0px));
+    transition: transform 0.38s cubic-bezier(0.4,0,0.2,1);
+    z-index: 200;
+    box-shadow: 0 -12px 48px rgba(26,23,20,0.25);
+    border-left: none;
+    border-top: 2px solid var(--accent);
+  }
+  .output-panel.open { transform: translateY(0); }
+  .output-header { padding-top: 24px; position: relative; }
+  .output-header::before {
+    content: '';
+    width: 36px; height: 4px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+    position: absolute;
+    top: 10px; left: 50%;
+    transform: translateX(-50%);
+    display: block;
+  }
+
+  .fab-prompt {
+    display: flex;
+    align-items: center; gap: 8px;
+    position: fixed;
+    bottom: 18px; right: 16px;
+    background: #070A0E; color: var(--accent-light);
+    border: 2px solid var(--accent);
+    padding: 13px 20px;
+    border-radius: 50px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; z-index: 300;
+    box-shadow: 0 6px 24px rgba(26,23,20,0.3);
+    transition: all var(--transition);
+    -webkit-tap-highlight-color: transparent;
+    letter-spacing: 0.04em;
+  }
+  .fab-prompt:active { transform: scale(0.96); }
+  .fab-count {
+    background: var(--accent); color: #fff;
+    border-radius: 50px;
+    padding: 2px 9px;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 22px; text-align: center;
+  }
+  .backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(26,23,20,0.5);
+    z-index: 190;
+  }
+  .backdrop.visible { display: block; }
+  .tweaks-panel { right: 16px; bottom: 80px; }
+}
+
+/* ── VIDEO PROMPT MODE ── */
+.vp-modebar { display:flex; gap:6px; margin-bottom:12px; }
+.vp-modebtn { flex:1; font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; padding:9px; border-radius:7px; cursor:pointer; background:var(--surface2); border:1px solid var(--border); color:var(--text-mid); transition:all var(--transition); }
+.vp-modebtn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+.vp-controls { display:none; flex-direction:column; gap:10px; margin-bottom:16px; padding:14px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
+.vp-controls.show { display:flex; }
+.vp-guide { font-size:11px; line-height:1.5; color:var(--text-mid); border:1px dashed var(--border2); border-radius:8px; padding:9px 10px; }
+.vp-guide b { color:var(--accent-light); }
+.vp-row { display:flex; gap:6px; flex-wrap:wrap; }
+.vp-seg, .vp-ratio { flex:1; min-width:80px; font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600; padding:8px 6px; border-radius:7px; cursor:pointer; background:var(--surface2); border:1px solid var(--border); color:var(--text-mid); text-align:center; transition:all var(--transition); }
+.vp-seg.active, .vp-ratio.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+.vp-lbl { font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-dim); margin-top:2px; }
+.vp-input { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:12px; padding:8px 10px; border-radius:7px; outline:none; }
+.vp-input:focus { border-color:var(--accent-light); }
+.vp-toggles { display:flex; flex-direction:column; gap:7px; margin-top:4px; }
+.vp-tog { display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--text-mid); cursor:pointer; }
+.vp-tog input { accent-color:var(--accent-light); width:14px; height:14px; }
+.vp-seqonly { display:none; flex-direction:column; gap:10px; }
+.vp-seqonly.show { display:flex; }
+.vp-stepper { display:flex; align-items:center; gap:10px; }
+.vp-step { width:30px; height:30px; border-radius:7px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:15px; cursor:pointer; line-height:1; }
+.vp-step:hover { border-color:var(--accent-light); color:var(--accent-light); }
+#vpChainCount { font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; min-width:18px; text-align:center; }
+.vp-step-note { font-size:11px; color:var(--text-dim); margin-left:4px; }
+.vp-clip { border:1px solid var(--border); border-radius:9px; padding:11px 12px; margin-bottom:10px; background:rgba(255,255,255,0.02); }
+.vp-clip-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; gap:8px; }
+.vp-clip-label { font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.04em; color:var(--accent-light); }
+.vp-clip-copy { font-family:'Space Grotesk',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase; padding:5px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface2); color:var(--text-mid); cursor:pointer; flex-shrink:0; }
+.vp-clip-copy:hover { border-color:var(--accent-light); color:var(--accent-light); }
+.vp-clip-text { font-size:12px; line-height:1.65; color:rgba(255,255,255,0.82); }
+</style>
+<template id="__bundler_thumbnail" data-bg-color="#162A1E">
+  <svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+    <!-- header bar -->
+    <rect width="120" height="12" fill="#0e1f15"/>
+    <text x="8" y="8.5" font-family="Georgia,serif" font-style="italic" font-size="6" fill="#fff" opacity="0.9">Prompt Studio</text>
+    <rect x="90" y="3.5" width="22" height="5" rx="2.5" fill="#2D6044" opacity="0.7"/>
+    <!-- left wizard panel -->
+    <rect x="0" y="12" width="76" height="68" fill="#EDF2EE"/>
+    <rect x="6" y="18" width="64" height="1.5" rx="0.75" fill="#C8DDD0"/>
+    <!-- step rows -->
+    <rect x="6" y="24" width="64" height="9" rx="3" fill="#fff" stroke="#C8DDD0" stroke-width="0.5"/>
+    <circle cx="12" cy="28.5" r="3" fill="#2D6044"/>
+    <rect x="18" y="26.5" width="28" height="1.5" rx="0.75" fill="#111C15" opacity="0.6"/>
+    <rect x="18" y="29.5" width="18" height="1" rx="0.5" fill="#7A9E88"/>
+    <rect x="6" y="35" width="64" height="9" rx="3" fill="#fff" stroke="#2D6044" stroke-width="0.8"/>
+    <circle cx="12" cy="39.5" r="3" fill="#2D6044"/>
+    <rect x="18" y="37.5" width="24" height="1.5" rx="0.75" fill="#111C15" opacity="0.6"/>
+    <rect x="6" y="46" width="64" height="9" rx="3" fill="#fff" stroke="#C8DDD0" stroke-width="0.5"/>
+    <circle cx="12" cy="50.5" r="3" fill="none" stroke="#C8DDD0" stroke-width="0.8"/>
+    <rect x="18" y="48.5" width="30" height="1.5" rx="0.75" fill="#111C15" opacity="0.5"/>
+    <rect x="6" y="57" width="64" height="9" rx="3" fill="#fff" stroke="#C8DDD0" stroke-width="0.5"/>
+    <circle cx="12" cy="61.5" r="3" fill="none" stroke="#C8DDD0" stroke-width="0.8"/>
+    <rect x="18" y="59.5" width="22" height="1.5" rx="0.75" fill="#111C15" opacity="0.5"/>
+    <!-- right output panel -->
+    <rect x="76" y="12" width="44" height="68" fill="#162A1E"/>
+    <rect x="80" y="18" width="28" height="2" rx="1" fill="#fff" opacity="0.7"/>
+    <rect x="80" y="22" width="18" height="1" rx="0.5" fill="#4A9E6A" opacity="0.6"/>
+    <rect x="80" y="27" width="36" height="1" rx="0.5" fill="#fff" opacity="0.2"/>
+    <rect x="80" y="30" width="32" height="1" rx="0.5" fill="#fff" opacity="0.2"/>
+    <rect x="80" y="33" width="34" height="1" rx="0.5" fill="#fff" opacity="0.15"/>
+    <rect x="80" y="36" width="30" height="1" rx="0.5" fill="#fff" opacity="0.25"/>
+    <rect x="80" y="39" width="36" height="1" rx="0.5" fill="#fff" opacity="0.15"/>
+    <rect x="80" y="42" width="28" height="1" rx="0.5" fill="#fff" opacity="0.2"/>
+    <rect x="80" y="45" width="33" height="1" rx="0.5" fill="#4A9E6A" opacity="0.4"/>
+    <rect x="80" y="48" width="36" height="1" rx="0.5" fill="#fff" opacity="0.15"/>
+    <rect x="80" y="67" width="36" height="7" rx="2" fill="#2D6044"/>
+    <text x="98" y="72" font-family="monospace" font-size="3.5" fill="#fff" text-anchor="middle">Copy Prompt</text>
+  </svg>
+</template>
+
+
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-left">
+    <div class="header-logo">Prompt <span>Studio</span></div>
+    <div class="header-sep"></div>
+    <div class="header-tag">Revit · Residential Building</div>
+  </div>
+  <nav class="header-nav">
+    <a href="index.html">Home</a>
+    <a href="residential.html" class="active">Residential</a>
+    <a href="commercial.html">Commercial</a>
+    <a href="prompt-library.html">Library</a>
+  </nav>
+  <div class="header-right">
+    <div class="header-pill">Residential</div>
+    <div class="header-sel-count" id="selCount">0</div>
+  </div>
+</header>
+
+<div class="main-layout">
+
+  <!-- LEFT: WIZARD -->
+  <div class="wizard-panel">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-label" id="progressLabel">0 / 17</div>
+    </div>
+
+    <!-- Steps injected by JS -->
+    <div id="wizardSteps"></div>
+  </div>
+
+  <!-- RIGHT: OUTPUT -->
+  <div class="output-panel" id="outputPanel">
+    <div class="output-header">
+      <div class="output-header-row">
+        <div class="output-label">Generated Prompt</div>
+        <div class="output-model-tag">Gemini 3 Flash · Nano Banana 2</div>
+      </div>
+      <div class="output-meta">
+        <span id="selectionCount">0 selections</span>
+        &nbsp;·&nbsp;
+        <span class="output-word-count" id="wordCount">— words</span>
+      </div>
+    </div>
+
+    <!-- OUTPUT MODE TOGGLE -->
+    <div class="vp-modebar">
+      <button class="vp-modebtn active" id="vpModeImage" onclick="setOutputMode('image')">Image Prompt</button>
+      <button class="vp-modebtn" id="vpModeVideo" onclick="setOutputMode('video')">Video Prompt</button>
+    </div>
+
+    <!-- VIDEO CONTROLS -->
+    <div class="vp-controls" id="vpControls">
+      <div class="vp-guide" id="vpGuide"></div>
+      <div class="vp-row">
+        <button class="vp-seg active" data-vmode="orbit" onclick="setVideoMode('orbit')">Orbit</button>
+        <button class="vp-seg" data-vmode="keyframe" onclick="setVideoMode('keyframe')">Keyframe</button>
+        <button class="vp-seg" data-vmode="sequence" onclick="setVideoMode('sequence')">Sequence</button>
+      </div>
+      <label class="vp-lbl">Subject anchor</label>
+      <input class="vp-input" id="vpSubject" type="text" oninput="onVideoField()">
+      <div id="vpCameraWrap">
+        <label class="vp-lbl">Camera move</label>
+        <select class="vp-input" id="vpCamera" onchange="onVideoField()"></select>
+      </div>
+      <div class="vp-seqonly" id="vpSeqControls">
+        <label class="vp-lbl">Images in chain</label>
+        <div class="vp-stepper">
+          <button type="button" class="vp-step" onclick="changeChain(-1)">&minus;</button>
+          <span id="vpChainCount">3</span>
+          <button type="button" class="vp-step" onclick="changeChain(1)">+</button>
+          <span class="vp-step-note" id="vpClipNote">2 clips</span>
+        </div>
+        <label class="vp-lbl">Direction</label>
+        <select class="vp-input" id="vpDirection" onchange="onVideoField()">
+          <option value="cw">Orbit clockwise</option>
+          <option value="ccw">Orbit counter-clockwise</option>
+          <option value="push">Continuous push-in</option>
+          <option value="rise">Continuous rise</option>
+        </select>
+      </div>
+      <label class="vp-lbl">Pacing</label>
+      <select class="vp-input" id="vpPacing" onchange="onVideoField()">
+        <option value="slow, premium real-estate pacing">Slow / premium</option>
+        <option value="moderate steady pacing">Moderate</option>
+        <option value="dynamic energetic pacing">Dynamic</option>
+      </select>
+      <label class="vp-lbl">Aspect ratio</label>
+      <div class="vp-row">
+        <button class="vp-ratio active" data-vr="16:9" onclick="setVideoRatio('16:9')">16:9</button>
+        <button class="vp-ratio" data-vr="9:16" onclick="setVideoRatio('9:16')">9:16</button>
+        <button class="vp-ratio" data-vr="1:1" onclick="setVideoRatio('1:1')">1:1</button>
+      </div>
+      <div class="vp-toggles">
+        <label class="vp-tog"><input type="checkbox" id="vpInheritLight" checked onchange="onVideoField()"> Use lighting from wizard</label>
+        <label class="vp-tog"><input type="checkbox" id="vpGeo" checked onchange="onVideoField()"> Lock geometry (no morphing)</label>
+        <label class="vp-tog"><input type="checkbox" id="vpNoText" checked onchange="onVideoField()"> No text</label>
+        <label class="vp-tog"><input type="checkbox" id="vpNoPeople" checked onchange="onVideoField()"> No people</label>
+        <label class="vp-tog"><input type="checkbox" id="vpAudio" checked onchange="onVideoField()"> Native ambient audio</label>
+      </div>
+    </div>
+
+    <!-- Presets bar (feature 5) -->
+    <div class="presets-bar" id="presetsBar">
+      <span class="presets-label">Presets:</span>
+      <button class="btn-save-preset" onclick="savePreset()">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1v8M1 5h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Save current
+      </button>
+      <span id="presetSync" style="font-size:10px; color:var(--text-dim); margin-left:4px;">Local only</span>
+      <div id="presetChips"></div>
+    </div>
+
+    <!-- Selected picks strip (feature 4) -->
+    <div class="picks-strip" id="picksStrip">
+      <div class="picks-strip-label">Selected materials</div>
+      <div class="picks-thumbs" id="picksThumbsRow">
+        <div class="picks-empty" id="picksEmpty">— none yet</div>
+      </div>
+    </div>
+
+    <div class="output-box" id="outputBox"></div>
+    <div class="output-actions">
+      <button class="btn-copy" id="copyBtn" onclick="copyPrompt()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="4" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 4V2.5A1.5 1.5 0 015.5 1H11.5A1.5 1.5 0 0113 2.5V8.5A1.5 1.5 0 0111.5 10H10" stroke="currentColor" stroke-width="1.5"/></svg>
+        Copy Prompt
+      </button>
+      <button class="btn-copy" onclick="printPrompt()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);margin-top:0;">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 4V2h7v2M3.5 10H2a1 1 0 01-1-1V6a1 1 0 011-1h10a1 1 0 011 1v3a1 1 0 01-1 1h-1.5M3.5 8h7v4h-7V8z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        Save as PDF
+      </button>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="expandAll()">Expand All</button>
+        <button class="btn-secondary" onclick="collapseAll()">Collapse All</button>
+        <button class="btn-secondary btn-reset" onclick="resetAll()">Reset</button>
+      </div>
+      <div style="text-align:center; padding-top:6px;">
+        <span style="font-family:'Cormorant Garamond',serif; font-style:italic; font-size:12px; color:rgba(255,255,255,0.28); letter-spacing:0.04em;">By Eng. Kassem Rammal</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Card hover preview popup (feature 2) -->
+<div class="card-preview-popup" id="cardPreviewPopup">
+  <div class="card-preview-img-wrap" id="cardPreviewImgWrap">
+    <div class="card-swatch-bg" id="cardPreviewBg"></div>
+    <img id="cardPreviewImg" alt="" />
+  </div>
+  <div class="card-preview-name" id="cardPreviewName"></div>
+</div>
+
+<!-- Mobile backdrop + FAB -->
+<div class="backdrop" id="backdrop" onclick="closeSheet()"></div>
+<button class="fab-prompt" id="fabBtn" onclick="toggleSheet()">
+  View Prompt <span class="fab-count" id="fabCount">0</span>
+</button>
+
+<!-- TWEAKS PANEL -->
+<div class="tweaks-panel" id="tweaksPanel">
+  <div class="tweaks-header">
+    <div class="tweaks-title">Tweaks</div>
+    <button class="tweaks-close" onclick="closeTweaks()">✕</button>
+  </div>
+  <div class="tweaks-body">
+    <div class="tweak-group">
+      <div class="tweak-label">Card Size</div>
+      <div class="tweak-options">
+        <button class="tweak-btn" onclick="setCardSize('sm')">Small</button>
+        <button class="tweak-btn active" onclick="setCardSize('md')">Medium</button>
+        <button class="tweak-btn" onclick="setCardSize('lg')">Large</button>
+      </div>
+    </div>
+    <div class="tweak-divider"></div>
+    <div class="tweak-group">
+      <div class="tweak-label">Theme</div>
+      <div class="tweak-options">
+        <button class="tweak-btn active" onclick="setTheme('warm')">Warm</button>
+        <button class="tweak-btn" onclick="setTheme('cool')">Cool</button>
+        <button class="tweak-btn" onclick="setTheme('dark')">Dark</button>
+      </div>
+    </div>
+    <div class="tweak-divider"></div>
+    <div class="tweak-group">
+      <div class="tweak-label">Sections</div>
+      <div class="tweak-options">
+        <button class="tweak-btn" onclick="expandAll()">Expand All</button>
+        <button class="tweak-btn" onclick="collapseAll()">Collapse All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// ✏️  CUSTOM IMAGE URLS — edit these to swap any card photo
+//
+// For each material value, you can provide:
+//   • An online URL:  'https://example.com/photo.jpg'
+//   • A local file:   'images/curtain-wall.jpg'
+//                     (place the file next to this HTML)
+//
+// Leave a value as '' (empty string) or remove the line
+// to fall back to the automatic Unsplash search photo.
+//
+// HOW TO ADD: find the material name below, paste your URL.
+// Example:
+//   'curtain wall glass': 'https://images.unsplash.com/photo-xxx',
+//   'exposed concrete':   'images/my-concrete.jpg',
+// ══════════════════════════════════════════════════════
+const IMG_URLS = {
+  // ── FACADE ──────────────────────────────────────────
+  'white natural stone':              '',
+  'natural limestone':                '',
+  'beige stone':                      '',
+  'white marble-look cladding':       '',
+  'sintered stone slabs':             '',
+  'dekton aura':                      '',
+  'exposed concrete':                 '',
+  'smooth stucco':                    '',
+  'textured stucco':                  '',
+  'travertine':                       '',
+  'granite panels':                   '',
+  'brick veneer':                     '',
+  'terracotta panels':                '',
+  'wood-look composite':              '',
+  'fiber cement panels':              '',
+  'modern plaster':                   '',
+  'ceramic façade panels':            '',
+  'mixed stone and plaster':          '',
+  'luxury composite façade':          '',
+  'aluminum cladding':                '',
+  'zinc standing seam cladding':      '',
+  'heavy textured stone':             '',
+  // ── ACCENT ──────────────────────────────────────────
+  'wood slats':                       '',
+  'decorative aluminum fins':         '',
+  'perforated metal screens':         '',
+  'black metal panels':               '',
+  'bronze metal strips':              '',
+  'vertical louvers':                 '',
+  'concrete bands':                   '',
+  'textured feature wall':            '',
+  'stone frames':                     '',
+  'greenery walls':                   '',
+  'warm timber cladding':             '',
+  'HPL panels':                       '',
+  'architectural screens':            '',
+  'plywood panels':                   '',
+  'MDF decorative elements':          '',
+  'shou sugi ban charred wood':       '',
+  'corten steel':                     '',
+  'vertical terracotta baguettes':    '',
+  // ── WINDOW FRAME ────────────────────────────────────
+  'black aluminum':                   '',
+  'champagne bronze':                 '',
+  'dark gray aluminum':               '',
+  'white aluminum':                   '',
+  'slim modern frames':               '',
+  'frameless glazing':                '',
+  'wood finish aluminum':             '',
+  'steel industrial frames':          '',
+  'premium curtain wall system':      '',
+  // ── GLASS ───────────────────────────────────────────
+  'clear glass':                      '',
+  'reflective glass':                 '',
+  'blue-tinted glass':                '',
+  'low-e glass':                      '',
+  'privacy smoked glass':             '',
+  'bronze tinted':                    '',
+  'double glazing realistic reflections': '',
+  'backlit translucent stone accents':'',
+  // ── SHADING ─────────────────────────────────────────
+  'none':                             '',
+  'horizontal louvers':               '',
+  'vertical fins':                    '',
+  'sliding screens':                  '',
+  'pergola shading':                  '',
+  'recessed windows':                 '',
+  'sun breakers':                     '',
+  'decorative mashrabiya screens':    '',
+  // ── BALCONY RAILING ─────────────────────────────────
+  'frameless glass railing':          '',
+  'black steel railing':              '',
+  'stainless steel railing':          '',
+  'vertical metal pickets':           '',
+  'concrete parapet':                 '',
+  'mixed glass and metal':            '',
+  'wood privacy screens':             '',
+  'planter railings':                 '',
+  // ── DOOR ────────────────────────────────────────────
+  'glass pivot doors':                '',
+  'wood grand doors':                 '',
+  'aluminum framed doors':            '',
+  'luxury bronze doors':              '',
+  'modern hidden entrance':           '',
+  // ── LIGHTING ────────────────────────────────────────
+  'clear structural daylight':        '',
+  'high-contrast architectural lighting': '',
+  'golden hour sunset':               '',
+  'bright midday':                    '',
+  'soft morning light':               '',
+  'cloudy cinematic mood':            '',
+  'rainy reflective mood':            '',
+  'blue hour evening':                '',
+  'warm sunrise':                     '',
+  'dramatic sunset':                  '',
+  'luxury night lighting':            '',
+  'neutral daylight':                 '',
+};
+
+// ══════════════════════════════════════════════════════
+// IMAGE KEYWORDS — Unsplash search terms per residential value
+// ══════════════════════════════════════════════════════
+const IMG_KEYWORDS = {
+  // facade
+  'white natural stone':              'white natural stone cladding residential building',
+  'natural limestone':                'natural limestone facade residential architecture',
+  'beige stone':                      'beige stone cladding house architecture',
+  'white marble-look cladding':       'white marble cladding modern house facade',
+  'sintered stone slabs':             'sintered stone cladding architecture residential',
+  'dekton aura':                      'dekton stone surface modern building',
+  'exposed concrete':                 'exposed concrete facade modern house',
+  'smooth stucco':                    'smooth white stucco house modern',
+  'textured stucco':                  'textured stucco render house facade',
+  'travertine':                       'travertine stone facade luxury house',
+  'granite panels':                   'granite stone panels house architecture',
+  'brick veneer':                     'brick veneer modern house facade',
+  'terracotta panels':                'terracotta panels residential facade',
+  'wood-look composite':              'wood composite cladding modern house',
+  'fiber cement panels':              'fiber cement panels modern house facade',
+  'modern plaster':                   'modern plaster render house exterior',
+  'ceramic façade panels':            'ceramic facade panels residential building',
+  'mixed stone and plaster':          'stone plaster mixed facade house',
+  'luxury composite façade':          'luxury composite cladding modern villa',
+  'aluminum cladding':                'aluminum cladding modern house facade',
+  'zinc standing seam cladding':      'zinc standing seam cladding house',
+  'heavy textured stone':             'heavy textured stone wall house',
+  // accent
+  'wood slats':                       'wood slats facade residential architecture',
+  'decorative aluminum fins':         'decorative aluminum fins house facade',
+  'perforated metal screens':         'perforated metal screen residential facade',
+  'black metal panels':               'black metal panel house modern facade',
+  'bronze metal strips':              'bronze metal strips house facade',
+  'vertical louvers':                 'vertical louvers house sun shading',
+  'concrete bands':                   'concrete band detail residential facade',
+  'textured feature wall':            'textured feature wall house exterior',
+  'stone frames':                     'stone frame window residential architecture',
+  'greenery walls':                   'green wall vertical garden house facade',
+  'warm timber cladding':             'warm timber wood cladding house',
+  'HPL panels':                       'HPL panel modern house facade',
+  'architectural screens':            'architectural screen house facade',
+  'plywood panels':                   'plywood wood panel house exterior',
+  'MDF decorative elements':          'decorative panel house facade detail',
+  'shou sugi ban charred wood':       'shou sugi ban charred wood house facade',
+  'corten steel':                     'corten steel weathered house facade',
+  'vertical terracotta baguettes':    'vertical terracotta baguette facade residential',
+  // window frame
+  'black aluminum':                   'black aluminum window frame modern house',
+  'champagne bronze':                 'champagne bronze window frame luxury house',
+  'dark gray aluminum':               'dark gray aluminum window modern house',
+  'white aluminum':                   'white aluminum window frame house',
+  'slim modern frames':               'slim window frame modern house minimal',
+  'frameless glazing':                'frameless glass window modern house',
+  'wood finish aluminum':             'wood finish aluminum window house',
+  'steel industrial frames':          'steel window frame industrial house',
+  'premium curtain wall system':      'premium curtain wall residential building',
+  // glass
+  'clear glass':                      'clear glass window house modern',
+  'reflective glass':                 'reflective glass modern house facade',
+  'blue-tinted glass':                'blue tinted glass window house',
+  'low-e glass':                      'low e glass energy efficient house',
+  'privacy smoked glass':             'smoked glass privacy window house',
+  'bronze tinted':                    'bronze tinted glass house window',
+  'double glazing realistic reflections': 'double glazed window house reflection',
+  'backlit translucent stone accents':'backlit stone panel architectural detail',
+  // shading
+  'none':                             'clean modern house facade no shading',
+  'horizontal louvers':               'horizontal louvers sun shading house',
+  'vertical fins':                    'vertical fins shading residential facade',
+  'sliding screens':                  'sliding screen shading house facade',
+  'pergola shading':                  'pergola shading terrace house architecture',
+  'recessed windows':                 'recessed window deep reveal house facade',
+  'sun breakers':                     'sun breaker architectural shading house',
+  'decorative mashrabiya screens':    'mashrabiya decorative screen architecture',
+  // balcony railing
+  'frameless glass railing':          'frameless glass balcony railing house',
+  'black steel railing':              'black steel balcony railing modern house',
+  'stainless steel railing':          'stainless steel balcony railing house',
+  'vertical metal pickets':           'metal picket balcony railing house',
+  'concrete parapet':                 'concrete parapet balcony modern building',
+  'mixed glass and metal':            'glass metal mixed balcony railing',
+  'wood privacy screens':             'wood privacy screen balcony house',
+  'planter railings':                 'planter box balcony railing green',
+  // door
+  'glass pivot doors':                'glass pivot door entrance luxury house',
+  'wood grand doors':                 'wood grand entrance door luxury house',
+  'aluminum framed doors':            'aluminum framed entrance door modern house',
+  'luxury bronze doors':              'luxury bronze entrance door villa',
+  'modern hidden entrance':           'hidden minimal entrance door modern house',
+  // lighting
+  'clear structural daylight':        'modern house bright daylight architecture',
+  'high-contrast architectural lighting': 'house high contrast sunlight shadow architecture',
+  'golden hour sunset':               'house golden hour sunset architecture',
+  'bright midday':                    'house bright midday sun architecture',
+  'soft morning light':               'house soft morning light architecture',
+  'cloudy cinematic mood':            'house cloudy overcast sky architecture',
+  'rainy reflective mood':            'house rain reflection wet street',
+  'blue hour evening':                'house blue hour twilight architecture',
+  'warm sunrise':                     'house warm sunrise morning architecture',
+  'dramatic sunset':                  'house dramatic sunset orange sky',
+  'luxury night lighting':            'luxury house night illuminated facade',
+  'neutral daylight':                 'house neutral daylight architecture',
+};
+
+// Unsplash image cache
+const imgCache = {};
+
+function getUnsplashUrl(keyword, w, h, seed) {
+  const q = encodeURIComponent(keyword);
+  return `https://source.unsplash.com/${w}x${h}/?${q}&sig=${seed}`;
+}
+
+function loadCardImage(swatchEl, bgEl, keyword, fallbackGradient, seed, val) {
+  const wrap = swatchEl.parentElement;
+  // Built-in CSS material texture is the default visual (no external dependency).
+  if (bgEl) bgEl.style.background = fallbackGradient || (VISUALS[val] || '');
+  wrap.classList.remove('loading');
+  // Only fetch over the network when a real custom URL has been supplied.
+  const customUrl = IMG_URLS[val];
+  if (customUrl && customUrl.trim() !== '') {
+    const url = customUrl.trim();
+    const img = new Image();
+    img.onload = () => { swatchEl.src = url; swatchEl.classList.add('loaded'); };
+    img.src = url;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// VISUALS — CSS gradient fallbacks (residential palette)
+// ══════════════════════════════════════════════════════
+const VISUALS = {
+  // facade
+  'white natural stone':           'linear-gradient(160deg,#f4f0ea 0%,#e8e2d8 35%,#f0ece4 65%,#ddd8ce 100%)',
+  'natural limestone':             'linear-gradient(160deg,#d0c0a0 0%,#c0b090 40%,#d8c8a8 70%,#b8a880 100%)',
+  'beige stone':                   'linear-gradient(160deg,#ddd0b8 0%,#cec0a8 40%,#e4d8c0 70%,#c8b898 100%)',
+  'white marble-look cladding':    'linear-gradient(135deg,#f8f6f2 0%,#ede8e0 30%,#f4f0ea 60%,#e8e2d8 100%)',
+  'sintered stone slabs':          'linear-gradient(160deg,#c8c0b4 0%,#d8d0c4 25%,#b8b0a4 50%,#ccc4b8 75%,#d4ccbf 100%)',
+  'dekton aura':                   'linear-gradient(135deg,#ddd8d0 0%,#c8c4bc 30%,#e4e0d8 60%,#d0ccc4 100%)',
+  'exposed concrete':              'linear-gradient(180deg,#7a7e80 0%,#686c6e 30%,#767a7c 60%,#6e7274 100%)',
+  'smooth stucco':                 'linear-gradient(160deg,#ede8e0 0%,#e0dbd2 50%,#f0ebe3 100%)',
+  'textured stucco':               'linear-gradient(155deg,#d8d0c4 0%,#c8c0b4 30%,#ddd5c9 60%,#cac2b6 100%)',
+  'travertine':                    'linear-gradient(160deg,#d8c8a8 0%,#c8b898 35%,#ddd0b0 65%,#c0b090 100%)',
+  'granite panels':                'linear-gradient(135deg,#585c5e 0%,#484c4e 25%,#606468 50%,#404448 75%,#545858 100%)',
+  'brick veneer':                  'repeating-linear-gradient(0deg,#8a4828 0px,#8a4828 14px,#6a3818 14px,#6a3818 16px)',
+  'terracotta panels':             'linear-gradient(150deg,#b86030 0%,#a85020 50%,#c07040 100%)',
+  'wood-look composite':           'repeating-linear-gradient(90deg,#9b7050 0px,#7a5530 8px,#a88060 8px,#7a5530 16px)',
+  'fiber cement panels':           'linear-gradient(160deg,#c8ccc8 0%,#b8bcb8 40%,#d0d4d0 70%,#b0b4b0 100%)',
+  'modern plaster':                'linear-gradient(160deg,#e8e4dc 0%,#dcd8d0 50%,#ecece4 100%)',
+  'ceramic façade panels':         'repeating-linear-gradient(0deg,#c8c4bc 0px,#c8c4bc 18px,#a8a49c 18px,#a8a49c 20px)',
+  'mixed stone and plaster':       'linear-gradient(135deg,#d0c0a0 0%,#e0dcd4 50%,#c8b898 100%)',
+  'luxury composite façade':       'linear-gradient(160deg,#181c20 0%,#282c32 40%,#101418 70%,#202428 100%)',
+  'aluminum cladding':             'repeating-linear-gradient(160deg,#d0d4d8 0px,#eaeef0 2px,#b0b4b8 2px,#dcdfe4 6px)',
+  'zinc standing seam cladding':   'repeating-linear-gradient(90deg,#8a9098 0px,#a8b0b8 3px,#7a8088 3px,#b0b8c0 10px)',
+  'heavy textured stone':          'repeating-linear-gradient(30deg,#909080 0px,#808070 6px,#a0a090 6px,#888878 12px)',
+  // accent
+  'wood slats':                    'repeating-linear-gradient(90deg,#a07850 0px,#886040 7px,#b08860 7px,#886040 14px)',
+  'decorative aluminum fins':      'repeating-linear-gradient(90deg,#d0d4d8 0px,#eaecf0 2px,#a8acb0 2px,#dcdfe4 7px)',
+  'perforated metal screens':      'radial-gradient(circle,#808890 1.5px,transparent 1.5px) 0 0 / 7px 7px,linear-gradient(135deg,#606468 0%,#707880 100%)',
+  'black metal panels':            'linear-gradient(160deg,#0e1012 0%,#1c2024 35%,#080c0e 65%,#161a1e 100%)',
+  'bronze metal strips':           'repeating-linear-gradient(90deg,#6a4820 0px,#9a7040 3px,#5a3c18 3px,#b08848 6px)',
+  'vertical louvers':              'repeating-linear-gradient(90deg,#c0c4c8 0px,#e0e4e8 2px,#909498 2px,#d0d4d8 9px)',
+  'concrete bands':                'repeating-linear-gradient(0deg,#909090 0px,#909090 16px,#a8a8a8 16px,#a8a8a8 18px)',
+  'textured feature wall':         'repeating-linear-gradient(30deg,#c8c0b0 0px,#b8b0a0 5px,#d8d0c0 5px,#c0b8a8 10px)',
+  'stone frames':                  'linear-gradient(135deg,#a89878 0%,#b8a888 50%,#989870 100%)',
+  'greenery walls':                'linear-gradient(160deg,#2d5a1e 0%,#3d7228 30%,#1e4014 60%,#4a8830 100%)',
+  'warm timber cladding':          'repeating-linear-gradient(90deg,#8a5e30 0px,#7a5028 8px,#9a6e40 8px,#7a5028 16px)',
+  'HPL panels':                    'linear-gradient(160deg,#383c3e 0%,#282c2e 50%,#404448 100%)',
+  'architectural screens':         'repeating-linear-gradient(0deg,#b8bcc0 0px,#b8bcc0 6px,transparent 6px,transparent 10px)',
+  'plywood panels':                'repeating-linear-gradient(90deg,#c8a870 0px,#b89860 8px,#d4b478 8px,#b09058 16px)',
+  'MDF decorative elements':       'linear-gradient(135deg,#c0b088 0%,#d0c098 50%,#b0a078 100%)',
+  'shou sugi ban charred wood':    'repeating-linear-gradient(90deg,#1a1410 0px,#0e0c08 6px,#2a2018 6px,#141008 12px)',
+  'corten steel':                  'linear-gradient(135deg,#8a4818 0%,#a85e28 30%,#7a3810 60%,#b86830 100%)',
+  'vertical terracotta baguettes': 'repeating-linear-gradient(90deg,#b05828 0px,#983818 4px,#c06838 4px,#983818 10px)',
+  // window frame
+  'black aluminum':                'linear-gradient(135deg,#101418 0%,#1c2024 50%,#0c1010 100%)',
+  'champagne bronze':              'linear-gradient(135deg,#c8a060 0%,#e0b870 30%,#a88040 60%,#d4ac68 100%)',
+  'dark gray aluminum':            'linear-gradient(135deg,#484c50 0%,#383c40 50%,#404448 100%)',
+  'white aluminum':                'linear-gradient(135deg,#f0eee8 0%,#e8e4de 50%,#f4f2ec 100%)',
+  'slim modern frames':            'repeating-linear-gradient(0deg,#282c30 0px,#282c30 20px,rgba(160,200,235,0.6) 20px,rgba(160,200,235,0.6) 38px)',
+  'frameless glazing':             'linear-gradient(135deg,rgba(180,215,245,0.4) 0%,rgba(210,235,255,0.65) 50%,rgba(160,205,235,0.35) 100%)',
+  'wood finish aluminum':          'repeating-linear-gradient(90deg,#9b7050 0px,#8b6040 10px,#a88060 10px,#886040 20px)',
+  'steel industrial frames':       'repeating-linear-gradient(0deg,#404448 0px,#404448 3px,rgba(160,200,235,0.55) 3px,rgba(160,200,235,0.55) 28px)',
+  'premium curtain wall system':   'repeating-linear-gradient(90deg,rgba(150,195,230,0.6) 0px,rgba(150,195,230,0.6) 24px,#2a3038 24px,#2a3038 26px)',
+  // glass
+  'clear glass':                   'linear-gradient(135deg,rgba(200,230,255,0.5) 0%,rgba(220,242,255,0.8) 50%,rgba(185,220,248,0.4) 100%)',
+  'reflective glass':              'linear-gradient(135deg,#3a6080 0%,#5a88a8 20%,#2a5070 45%,#6a98b8 65%,#3a6888 100%)',
+  'blue-tinted glass':             'linear-gradient(135deg,rgba(100,160,220,0.5) 0%,rgba(140,190,240,0.7) 50%,rgba(80,145,210,0.4) 100%)',
+  'low-e glass':                   'linear-gradient(135deg,rgba(155,210,185,0.5) 0%,rgba(185,228,208,0.7) 50%,rgba(135,198,175,0.4) 100%)',
+  'privacy smoked glass':          'linear-gradient(135deg,#282c30 0%,#343840 50%,#202428 100%)',
+  'bronze tinted':                 'linear-gradient(135deg,rgba(130,90,40,0.6) 0%,rgba(155,110,60,0.75) 50%,rgba(110,78,32,0.55) 100%)',
+  'double glazing realistic reflections': 'linear-gradient(135deg,rgba(160,200,235,0.6) 0%,rgba(200,230,255,0.82) 30%,rgba(140,185,220,0.5) 65%)',
+  'backlit translucent stone accents': 'linear-gradient(135deg,rgba(230,215,190,0.8) 0%,rgba(255,245,220,0.95) 50%,rgba(210,195,170,0.7) 100%)',
+  // shading
+  'none':                          'linear-gradient(135deg,#e8e4dc 0%,#d8d4cc 100%)',
+  'horizontal louvers':            'repeating-linear-gradient(0deg,#a0a4a8 0px,#c0c4c8 8px,#787c80 8px,#b0b4b8 12px)',
+  'vertical fins':                 'repeating-linear-gradient(90deg,#b0b4b8 0px,#d0d4d8 2px,#888c90 2px,#c0c4c8 9px)',
+  'sliding screens':               'repeating-linear-gradient(90deg,#c8c0b0 0px,#c8c0b0 8px,#a8a098 8px,#a8a098 10px)',
+  'pergola shading':               'repeating-linear-gradient(0deg,#8a6040 0px,#8a6040 4px,transparent 4px,transparent 14px)',
+  'recessed windows':              'linear-gradient(135deg,#383c3e 0%,rgba(160,200,235,0.5) 30%,#303438 70%,#404448 100%)',
+  'sun breakers':                  'repeating-linear-gradient(0deg,#a8acb0 0px,#a8acb0 10px,#787c80 10px,#787c80 14px)',
+  'decorative mashrabiya screens': 'repeating-linear-gradient(45deg,#c8a060 0px,#c8a060 2px,transparent 2px,transparent 6px),repeating-linear-gradient(-45deg,#c8a060 0px,#c8a060 2px,transparent 2px,transparent 6px)',
+  // balcony railing
+  'frameless glass railing':       'linear-gradient(135deg,rgba(200,230,255,0.45) 0%,rgba(220,242,255,0.7) 50%,rgba(185,220,248,0.35) 100%)',
+  'black steel railing':           'repeating-linear-gradient(90deg,#101418 0px,#101418 2px,transparent 2px,transparent 14px)',
+  'stainless steel railing':       'repeating-linear-gradient(90deg,#c0c8d0 0px,#e0e8f0 2px,#a0a8b0 2px,#d0d8e0 14px)',
+  'vertical metal pickets':        'repeating-linear-gradient(90deg,#8a9098 0px,#8a9098 3px,transparent 3px,transparent 12px)',
+  'concrete parapet':              'linear-gradient(160deg,#9a9e98 0%,#888c88 30%,#a0a49e 60%,#828680 100%)',
+  'mixed glass and metal':         'linear-gradient(135deg,rgba(180,215,245,0.45) 0%,#b0b8c0 50%,rgba(160,205,235,0.4) 100%)',
+  'wood privacy screens':          'repeating-linear-gradient(90deg,#9b7050 0px,#7a5530 6px,#a88060 6px,#7a5530 12px)',
+  'planter railings':              'linear-gradient(135deg,#3d7228 0%,#2d5a1e 40%,#4a8830 70%,#1e4014 100%)',
+  // door
+  'glass pivot doors':             'linear-gradient(135deg,rgba(185,218,248,0.65) 0%,rgba(210,235,255,0.82) 50%,rgba(165,205,238,0.55) 100%)',
+  'wood grand doors':              'linear-gradient(160deg,#6a4820 0%,#9a7040 30%,#5a3c18 60%,#b08848 100%)',
+  'aluminum framed doors':         'linear-gradient(160deg,#c8ccd0 0%,rgba(160,200,235,0.6) 25%,#b8bcc0 50%,rgba(150,195,230,0.55) 75%)',
+  'luxury bronze doors':           'linear-gradient(160deg,#5a3c18 0%,#8a6030 30%,#4a3010 60%,#a07840 100%)',
+  'modern hidden entrance':        'linear-gradient(160deg,#e8e4dc 0%,#f0ece4 50%,#dcd8d0 100%)',
+  // lighting
+  'clear structural daylight':     'linear-gradient(160deg,#d8dce0 0%,#e8ecf0 50%,#c8ccd0 100%)',
+  'high-contrast architectural lighting': 'linear-gradient(135deg,#f0f4f8 0%,#808890 50%,#101418 100%)',
+  'golden hour sunset':            'linear-gradient(160deg,#e8981e 0%,#d06010 40%,#f0b840 100%)',
+  'bright midday':                 'linear-gradient(180deg,#e0e8f0 0%,#eef4fc 50%,#d0dce8 100%)',
+  'soft morning light':            'linear-gradient(160deg,#f0e0c8 0%,#e8d0b0 50%,#f4e4cc 100%)',
+  'cloudy cinematic mood':         'linear-gradient(160deg,#707880 0%,#606870 50%,#808890 100%)',
+  'rainy reflective mood':         'linear-gradient(160deg,#3a4250 0%,#505870 50%,#2a3240 100%)',
+  'blue hour evening':             'linear-gradient(160deg,#0a1828 0%,#182848 40%,#080e18 100%)',
+  'warm sunrise':                  'linear-gradient(160deg,#f0a830 0%,#e88020 40%,#f8c050 100%)',
+  'dramatic sunset':               'linear-gradient(160deg,#a83010 0%,#d04820 40%,#e87030 100%)',
+  'luxury night lighting':         'linear-gradient(160deg,#080c10 0%,#4a90c4 40%,#040608 100%)',
+  'neutral daylight':              'linear-gradient(160deg,#c8ccd0 0%,#d8dce0 50%,#b8bcc0 100%)',
+};
+
+const COLOR_SWATCHES = {
+  'white minimal':          '#f4f0ea',
+  'warm beige':             '#d8c8a8',
+  'charcoal modern':        '#303438',
+  'sand tones':             '#c8b888',
+  'gray concrete':          '#888c90',
+  'Mediterranean cream':    '#e8d8b8',
+  'black and white contrast':'#1a1e22',
+  'earthy natural tones':   '#9a7850',
+  'luxury bronze palette':  '#8a6030',
+  'coastal bright tones':   '#a8c8d8',
+  'oxidized metal tones':   '#6a8070',
+};
+
+// ══════════════════════════════════════════════════════
+// DATA — Residential
+// ══════════════════════════════════════════════════════
+const DATA = {
+  facade:       ['white natural stone','natural limestone','beige stone','white marble-look cladding','sintered stone slabs','dekton aura','exposed concrete','smooth stucco','textured stucco','travertine','granite panels','brick veneer','terracotta panels','wood-look composite','fiber cement panels','modern plaster','ceramic façade panels','mixed stone and plaster','luxury composite façade','aluminum cladding','zinc standing seam cladding','heavy textured stone'],
+  accent:       ['wood slats','decorative aluminum fins','perforated metal screens','black metal panels','bronze metal strips','vertical louvers','concrete bands','textured feature wall','stone frames','greenery walls','warm timber cladding','HPL panels','architectural screens','plywood panels','MDF decorative elements','shou sugi ban charred wood','corten steel','vertical terracotta baguettes'],
+  color:        ['white minimal','warm beige','charcoal modern','sand tones','gray concrete','Mediterranean cream','black and white contrast','earthy natural tones','luxury bronze palette','coastal bright tones','oxidized metal tones'],
+  windowFrame:  ['black aluminum','champagne bronze','dark gray aluminum','white aluminum','slim modern frames','frameless glazing','wood finish aluminum','steel industrial frames','premium curtain wall system'],
+  glass:        ['clear glass','reflective glass','blue-tinted glass','low-e glass','privacy smoked glass','bronze tinted','double glazing realistic reflections','backlit translucent stone accents'],
+  shading:      ['none','horizontal louvers','vertical fins','sliding screens','pergola shading','recessed windows','sun breakers','decorative mashrabiya screens'],
+  balconyRailing:['frameless glass railing','black steel railing','stainless steel railing','vertical metal pickets','concrete parapet','mixed glass and metal','wood privacy screens','planter railings'],
+  balconyStyle: ['modern cantilevered balconies','recessed balconies','continuous wraparound balconies','stacked terraces','corner balconies','luxury deep terraces','compact apartment balconies'],
+  terraceDetails:['outdoor seating','planters','pergola','lighting strips','green terrace','lounge furniture','minimal clean terrace'],
+  roof:         ['flat roof modern','rooftop pergola','penthouse terrace','green roof','solar panel roof','rooftop garden','minimal parapet roof','mechanical screened roof','Mediterranean tiled roof','luxury sky lounge roof'],
+  entrance:     ['elegant residential lobby','gated entrance','luxury marble lobby','double-height entrance','minimalist glass lobby','classic stone entrance','private villa-style gate','secure family residence entry','textured GFRC panel entry'],
+  groundFloor:  ['parking access','pilotis parking','landscaped podium','reception lobby','retail corner shops','garden entrance','valet drop-off','townhouse entry zone'],
+  door:         ['glass pivot doors','wood grand doors','aluminum framed doors','luxury bronze doors','modern hidden entrance'],
+  location:     ['Beirut urban street','Lebanese suburb','mountain residential area','Mediterranean coastal road','upscale city district','Gulf residential compound','European suburban neighborhood','dense urban avenue','hillside neighborhood','palm-lined boulevard','village context','luxury marina district'],
+  surroundings: ['Sidewalks and paving','Street curbs','Trees and landscaping','Palm trees','Flower beds','Grass zones','Boundary walls','Security gate','Parked cars','Luxury cars','Family cars','People walking','Residents on balconies','Street lights','Benches','Neighboring buildings matching scale','Clean roads','Urban furniture'],
+  lighting:     ['clear structural daylight','high-contrast architectural lighting','golden hour sunset','bright midday','soft morning light','cloudy cinematic mood','rainy reflective mood','blue hour evening','warm sunrise','dramatic sunset','luxury night lighting','neutral daylight'],
+  camera:       ['eye-level 35mm wide-angle street perspective','corner perspective 50mm lens','frontal façade angle','aerial 45-degree wide shot','pedestrian entrance close-up 85mm portrait lens','wide street scene','rooftop perspective','human eye low-angle perspective','side elevation perspective'],
+};
+
+// Step definitions — Residential
+const STEPS = [
+  { key: 'facade',         title: 'Main Façade Material',   subtitle: 'Primary exterior skin',              type: 'cards',       multi: false },
+  { key: 'accent',         title: 'Accent Materials',       subtitle: 'Secondary elements & details',       type: 'cards',       multi: true  },
+  { key: 'color',          title: 'Color Palette',          subtitle: 'Overall tonal direction',            type: 'color',       multi: false },
+  { key: 'windowFrame',    title: 'Window Frame Style',     subtitle: 'Frame material & finish',            type: 'cards',       multi: false },
+  { key: 'glass',          title: 'Glass Type',             subtitle: 'Transparency & tint',                type: 'cards',       multi: false },
+  { key: 'shading',        title: 'Shading Elements',       subtitle: 'Solar control features',             type: 'cards',       multi: false },
+  { key: 'balconyRailing', title: 'Balcony Railing',        subtitle: 'Railing style & material',          type: 'cards',       multi: false },
+  { key: 'balconyStyle',   title: 'Balcony Style',          subtitle: 'Balcony typology',                   type: 'chips',       multi: false },
+  { key: 'terraceDetails', title: 'Terrace Details',        subtitle: 'Terrace furnishing & greenery',      type: 'chips',       multi: true  },
+  { key: 'roof',           title: 'Roof Design',            subtitle: 'Top-of-building treatment',          type: 'chips',       multi: false },
+  { key: 'entrance',       title: 'Entrance Type',          subtitle: 'Lobby & arrival experience',         type: 'chips',       multi: false },
+  { key: 'groundFloor',    title: 'Ground Floor Use',       subtitle: 'Activation at street level',         type: 'chips',       multi: false },
+  { key: 'door',           title: 'Door Style',             subtitle: 'Entry door type',                    type: 'cards',       multi: false },
+  { key: 'location',       title: 'Site Context',           subtitle: 'Urban setting & locale',             type: 'chips',       multi: false },
+  { key: 'surroundings',   title: 'Surroundings',           subtitle: 'Street-level environment',           type: 'surroundings',multi: true  },
+  { key: 'lighting',       title: 'Lighting Mood',          subtitle: 'Time of day & atmosphere',           type: 'cards',       multi: false },
+  { key: 'camera',         title: 'Camera View',            subtitle: 'Compositional angle & lens',         type: 'chips',       multi: false },
+];
+
+const CARD_KEYS = ['facade','accent','windowFrame','glass','shading','balconyRailing','door','lighting'];
+const state = {};
+STEPS.forEach(s => { state[s.key] = s.multi ? [] : null; });
+
+// ══════════════════════════════════════════════════════
+// VIDEO PROMPT MODE
+// ══════════════════════════════════════════════════════
+var outputMode = 'image';
+var SUBJECT_DEFAULT = 'residential building';
+var AUDIO_AMBIENCE = 'light wind, faint birds, soft garden ambience';
+var VIDEO_CAMERAS = {
+  orbit: [
+    'aerial drone orbit that circles the building in one unbroken move, revealing the facade, terraces and balconies',
+    'rising crane reveal that lifts up the full height of the structure',
+    'slow push-in toward the main entrance',
+    'high descending drone that settles from a wide view down to street level',
+    'lateral tracking glide passing along the facade'
+  ],
+  keyframe: [
+    'a slow aerial drone arc traveling from the first angle to the last',
+    'a push from a wide establishing view to a close architectural detail',
+    'a crane rise connecting the two framed views',
+    'a sweeping orbit connecting the opening and closing angles'
+  ]
+};
+var videoState = { mode: 'orbit', ratio: '16:9', camera: 0, chain: 3 };
+var lastSequence = [];
+var DIRECTIONS = {
+  cw:   { first: 'orbiting clockwise around the building', cont: 'orbiting clockwise' },
+  ccw:  { first: 'orbiting counter-clockwise around the building', cont: 'orbiting counter-clockwise' },
+  push: { first: 'moving in a continuous forward push toward the building', cont: 'pushing forward' },
+  rise: { first: 'craning continuously upward along the building', cont: 'craning upward' }
+};
+
+function vCap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function fillVideoCameras(){
+  var sel = document.getElementById('vpCamera');
+  var list = VIDEO_CAMERAS[videoState.mode];
+  var html = '';
+  for (var i = 0; i < list.length; i++){ html += '<option value="' + i + '">' + vCap(list[i]) + '</option>'; }
+  sel.innerHTML = html;
+  videoState.camera = 0;
+}
+
+function updateVideoGuide(){
+  var g = document.getElementById('vpGuide');
+  if (videoState.mode === 'orbit'){
+    g.innerHTML = '<b>Image slots:</b> upload all 2&ndash;3 renders as plain reference images. Materials come from the images, so the text stays lean.';
+  } else if (videoState.mode === 'keyframe'){
+    g.innerHTML = '<b>Image slots:</b> set image 1 as the <b>first frame</b> and the last render as the <b>final frame</b>. A third image (if any) is a content reference.';
+  } else {
+    g.innerHTML = '<b>Per clip:</b> upload two frames &mdash; image N as the opening frame, image N+1 as the closing frame. Reuse each boundary image as the start of the next clip, and trim one duplicate frame when stitching.';
+  }
+}
+
+function setOutputMode(m){
+  outputMode = m;
+  document.getElementById('vpModeImage').classList.toggle('active', m === 'image');
+  document.getElementById('vpModeVideo').classList.toggle('active', m === 'video');
+  document.getElementById('vpControls').classList.toggle('show', m === 'video');
+  var tag = document.querySelector('.output-model-tag');
+  if (tag){ tag.textContent = (m === 'video') ? 'Veo 3.1 / Gemini Omni' : 'Gemini 3 Flash \u00b7 Nano Banana 2'; }
+  updateOutput();
+}
+
+function setVideoMode(m){
+  videoState.mode = m;
+  var btns = document.querySelectorAll('.vp-seg');
+  for (var i = 0; i < btns.length; i++){ btns[i].classList.toggle('active', btns[i].getAttribute('data-vmode') === m); }
+  var camWrap = document.getElementById('vpCameraWrap');
+  var seq = document.getElementById('vpSeqControls');
+  if (m === 'sequence'){
+    if (camWrap) camWrap.style.display = 'none';
+    if (seq) seq.classList.add('show');
+  } else {
+    if (camWrap) camWrap.style.display = '';
+    if (seq) seq.classList.remove('show');
+    fillVideoCameras();
+  }
+  updateVideoGuide();
+  updateOutput();
+}
+
+function setVideoRatio(r){
+  videoState.ratio = r;
+  var btns = document.querySelectorAll('.vp-ratio');
+  for (var i = 0; i < btns.length; i++){ btns[i].classList.toggle('active', btns[i].getAttribute('data-vr') === r); }
+  updateOutput();
+}
+
+function onVideoField(){ updateOutput(); }
+
+function buildVideoPromptLines(){
+  var loc = state.location ? (' in ' + state.location) : '';
+  var subjEl = document.getElementById('vpSubject');
+  var subject = (subjEl && subjEl.value.trim()) ? subjEl.value.trim() : SUBJECT_DEFAULT;
+  var subjectFull = subject + loc;
+  var list = VIDEO_CAMERAS[videoState.mode];
+  var cam = list[videoState.camera] || list[0];
+  var intro;
+  if (videoState.mode === 'orbit'){
+    intro = 'The reference images are the SAME building shown from different angles \u2014 treat them as one consistent structure, not separate buildings. Continuous cinematic ' + cam + ' of a single ' + subjectFull + '.';
+  } else {
+    intro = 'Use the FIRST reference image as the opening frame and the LAST as the closing frame. They are the SAME ' + subjectFull + '. Generate one continuous camera move between the two views: ' + cam + '.';
+  }
+  var parts = [intro];
+  var inheritEl = document.getElementById('vpInheritLight');
+  if (inheritEl && inheritEl.checked && state.lighting){ parts.push(vCap(state.lighting) + '.'); }
+  var q = ['photorealistic, high detail'];
+  if (document.getElementById('vpGeo').checked) q.push('stable geometry, no morphing or warping of the structure');
+  if (document.getElementById('vpNoText').checked) q.push('no text');
+  if (document.getElementById('vpNoPeople').checked) q.push('no people');
+  parts.push(vCap(q.join(', ')) + '.');
+  if (document.getElementById('vpAudio').checked) parts.push('Subtle native ambient audio: ' + AUDIO_AMBIENCE + '.');
+  var pEl = document.getElementById('vpPacing');
+  var pacing = pEl ? pEl.value : 'slow, premium real-estate pacing';
+  var ratio = videoState.ratio;
+  parts.push(vCap(pacing) + '. ' + ratio + (ratio === '9:16' ? ' vertical' : '') + '.');
+  return [parts.join(' ')];
+}
+
+function changeChain(d){
+  var n = videoState.chain + d;
+  if (n < 3) n = 3;
+  if (n > 6) n = 6;
+  videoState.chain = n;
+  document.getElementById('vpChainCount').textContent = n;
+  document.getElementById('vpClipNote').textContent = (n - 1) + ' clips';
+  updateOutput();
+}
+
+function buildSequencePrompts(){
+  var loc = state.location ? (' in ' + state.location) : '';
+  var subjEl = document.getElementById('vpSubject');
+  var subject = (subjEl && subjEl.value.trim()) ? subjEl.value.trim() : SUBJECT_DEFAULT;
+  var subjectFull = subject + loc;
+  var dirEl = document.getElementById('vpDirection');
+  var dir = DIRECTIONS[dirEl ? dirEl.value : 'cw'] || DIRECTIONS.cw;
+  var clips = videoState.chain - 1;
+  var inheritEl = document.getElementById('vpInheritLight');
+  var useLight = inheritEl && inheritEl.checked && state.lighting;
+  var q = ['photorealistic, high detail'];
+  if (document.getElementById('vpGeo').checked) q.push('stable geometry, no morphing or warping of the structure');
+  if (document.getElementById('vpNoText').checked) q.push('no text');
+  if (document.getElementById('vpNoPeople').checked) q.push('no people');
+  var qLine = vCap(q.join(', ')) + '.';
+  var audioOn = document.getElementById('vpAudio').checked;
+  var pEl = document.getElementById('vpPacing');
+  var pacing = pEl ? pEl.value : 'slow, premium real-estate pacing';
+  var ratio = videoState.ratio;
+  var ratioLine = vCap(pacing) + '. ' + ratio + (ratio === '9:16' ? ' vertical' : '') + '.';
+  var out = [];
+  for (var i = 0; i < clips; i++){
+    var isFirst = (i === 0);
+    var isLast = (i === clips - 1);
+    var intro = 'Use the FIRST reference image as the opening frame and the SECOND as the closing frame. They are the SAME ' + subjectFull + '. ';
+    var motion;
+    if (isFirst){
+      motion = 'One continuous cinematic camera move from the first angle to the second, ' + dir.first + '. Maintain constant camera speed and momentum through the final frame \u2014 do not slow down, ease out, or stop at the end.';
+    } else {
+      motion = 'Continue the previous shot with no pause: begin already in motion at full speed and keep ' + dir.cont + ' in the same direction, from this angle to the next. Do not ease in or accelerate from rest at the start.';
+      if (isLast){ motion += ' You may let the camera settle gently only at the very end of this final clip.'; }
+      else { motion += ' Maintain constant speed and momentum through the final frame \u2014 do not slow down or stop at the end.'; }
+    }
+    var parts = [intro + motion];
+    if (useLight){ parts.push(vCap(state.lighting) + (isFirst ? '.' : ', identical grade to the previous clip.')); }
+    parts.push(qLine);
+    if (audioOn){ parts.push('Subtle native ambient audio: ' + AUDIO_AMBIENCE + '.'); }
+    parts.push(ratioLine);
+    out.push({ label: 'Clip ' + (i + 1) + '  \u00b7  image ' + (i + 1) + ' \u2192 image ' + (i + 2), text: parts.join(' ') });
+  }
+  return out;
+}
+
+function copyClip(idx, btn){
+  if (!lastSequence[idx]) return;
+  navigator.clipboard.writeText(lastSequence[idx].text).then(function(){
+    var old = btn.textContent;
+    btn.textContent = 'Copied';
+    setTimeout(function(){ btn.textContent = old; }, 1600);
+  });
+}
+
+function renderVideoOutput(){
+  var box = document.getElementById('outputBox');
+  box.innerHTML = '';
+  if (videoState.mode === 'sequence'){
+    lastSequence = buildSequencePrompts();
+    var total = 0;
+    for (var i = 0; i < lastSequence.length; i++){
+      total += lastSequence[i].text.split(/\s+/).filter(Boolean).length;
+      var clip = document.createElement('div');
+      clip.className = 'vp-clip';
+      var head = document.createElement('div');
+      head.className = 'vp-clip-head';
+      var lab = document.createElement('span');
+      lab.className = 'vp-clip-label';
+      lab.textContent = lastSequence[i].label;
+      var cp = document.createElement('button');
+      cp.className = 'vp-clip-copy';
+      cp.textContent = 'Copy';
+      cp.onclick = (function(idx){ return function(){ copyClip(idx, this); }; })(i);
+      head.appendChild(lab);
+      head.appendChild(cp);
+      var txt = document.createElement('div');
+      txt.className = 'vp-clip-text';
+      txt.textContent = lastSequence[i].text;
+      clip.appendChild(head);
+      clip.appendChild(txt);
+      box.appendChild(clip);
+    }
+    document.getElementById('wordCount').textContent = total + ' words';
+    document.getElementById('selectionCount').textContent = lastSequence.length + ' clips';
+    return;
+  }
+  var lines = buildVideoPromptLines();
+  var text = lines.join('\n');
+  var words = text.split(/\s+/).filter(Boolean).length;
+  document.getElementById('wordCount').textContent = words + ' words';
+  document.getElementById('selectionCount').textContent = 'video mode';
+  var p = document.createElement('p');
+  p.style.cssText = 'margin-bottom:4px;color:rgba(255,255,255,0.82);line-height:1.7;';
+  p.textContent = text;
+  box.appendChild(p);
+}
+
+function initVideoUI(){
+  var subjEl = document.getElementById('vpSubject');
+  if (subjEl) subjEl.value = SUBJECT_DEFAULT;
+  fillVideoCameras();
+  updateVideoGuide();
+}
+
+// ══════════════════════════════════════════════════════
+// BUILD WIZARD
+// ══════════════════════════════════════════════════════
+function buildWizard() {
+  const container = document.getElementById('wizardSteps');
+  STEPS.forEach((step, idx) => {
+    const stepEl = document.createElement('div');
+    stepEl.className = 'step';
+    stepEl.id = `step-${step.key}`;
+    stepEl.dataset.key = step.key;
+
+    stepEl.innerHTML = `
+      <div class="step-header" onclick="toggleStep('${step.key}')">
+        <div class="step-num">${idx + 1}</div>
+        <div>
+          <div class="step-title">${step.title}</div>
+          <div class="step-subtitle">${step.subtitle}</div>
+        </div>
+        <div class="step-badge empty" id="badge-${step.key}">—</div>
+        <svg class="step-chevron" viewBox="0 0 18 18" fill="none">
+          <path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="step-body" id="body-${step.key}">
+        <div class="step-hint">${step.multi ? 'Multi-select' : 'Single select'}</div>
+        <div id="content-${step.key}"></div>
+      </div>`;
+
+    container.appendChild(stepEl);
+    buildStepContent(step);
+  });
+
+  // open first step by default
+  toggleStep('facade');
+}
+
+function buildStepContent(step) {
+  const container = document.getElementById(`content-${step.key}`);
+  if (!container) return;
+
+  if (step.key === 'surroundings') {
+    const qActns = document.createElement('div');
+    qActns.className = 'quick-actions';
+    qActns.innerHTML = `<button class="quick-btn" onclick="selectAllSurroundings()">Select All</button><button class="quick-btn" onclick="clearSurroundings()">Clear All</button>`;
+    container.appendChild(qActns);
+    const grid = document.createElement('div');
+    grid.className = 'surroundings-grid';
+    DATA[step.key].forEach(val => {
+      const el = document.createElement('div');
+      el.className = 'check-item';
+      el.dataset.key = step.key; el.dataset.val = val;
+      el.innerHTML = `<div class="check-box"><span class="check-tick">✓</span></div><span class="check-label">${val}</span>`;
+      el.addEventListener('click', () => toggleMulti(step.key, val, el));
+      grid.appendChild(el);
+    });
+    container.appendChild(grid);
+
+  } else if (step.key === 'color') {
+    const grid = document.createElement('div');
+    grid.className = 'options-grid';
+    DATA[step.key].forEach(val => {
+      const el = document.createElement('div');
+      el.className = 'color-chip';
+      el.dataset.key = step.key; el.dataset.val = val;
+      const sw = document.createElement('div');
+      sw.className = 'color-swatch';
+      sw.style.background = COLOR_SWATCHES[val] || '#888';
+      el.appendChild(sw);
+      el.appendChild(document.createTextNode(val));
+      el.addEventListener('click', () => selectSingle(step.key, val));
+      grid.appendChild(el);
+    });
+    container.appendChild(grid);
+
+  } else if (CARD_KEYS.includes(step.key)) {
+    const grid = document.createElement('div');
+    grid.className = 'cards-grid';
+    DATA[step.key].forEach((val, idx) => {
+      const card = document.createElement('div');
+      card.className = 'mat-card';
+      card.dataset.key = step.key; card.dataset.val = val;
+
+      const imgWrap = document.createElement('div');
+      imgWrap.className = 'card-img-wrap';
+      imgWrap.style.position = 'relative';
+
+      // gradient fallback layer (always present behind image)
+      const bg = document.createElement('div');
+      bg.className = 'card-swatch-bg';
+      bg.style.background = VISUALS[val] || 'linear-gradient(135deg,#ddd8d0 0%,#c0bcb4 100%)';
+      imgWrap.appendChild(bg);
+
+      // real image on top
+      const imgEl = document.createElement('img');
+      imgEl.className = 'card-swatch img-swatch';
+      imgEl.alt = val;
+      imgEl.loading = 'lazy';
+      imgWrap.appendChild(imgEl);
+
+      const chk = document.createElement('div');
+      chk.className = 'card-check'; chk.textContent = '✓';
+      imgWrap.appendChild(chk);
+
+      const lbl = document.createElement('div');
+      lbl.className = 'card-label'; lbl.textContent = val;
+
+      card.appendChild(imgWrap);
+      card.appendChild(lbl);
+      // hover preview (feature 2)
+      const previewKeyword = IMG_KEYWORDS[val] || val + ' architecture material';
+      const previewSeed = step.key.charCodeAt(0) * 100 + idx;
+      const previewGrad = VISUALS[val] || '';
+      card.addEventListener('mouseenter', () => showCardPreview(card, val, previewKeyword, previewGrad, previewSeed));
+      card.addEventListener('mouseleave', hideCardPreview);
+
+      card.addEventListener('click', () => step.multi ? toggleMulti(step.key, val, card) : selectSingle(step.key, val));
+      grid.appendChild(card);
+
+      // lazy load image using IntersectionObserver
+      const keyword = IMG_KEYWORDS[val] || val + ' architecture material';
+      const seed = step.key.charCodeAt(0) * 100 + idx;
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            loadCardImage(imgEl, bg, keyword, VISUALS[val] || '', seed);
+            observer.disconnect();
+          }
+        });
+      }, { rootMargin: '200px' });
+      observer.observe(card);
+    });
+    container.appendChild(grid);
+
+  } else {
+    // plain chips
+    const grid = document.createElement('div');
+    grid.className = 'options-grid';
+    DATA[step.key].forEach(val => {
+      const el = document.createElement('div');
+      el.className = 'chip';
+      el.dataset.key = step.key; el.dataset.val = val;
+      el.textContent = val;
+      el.addEventListener('click', () => step.multi ? toggleMulti(step.key, val, el) : selectSingle(step.key, val));
+      grid.appendChild(el);
+    });
+    container.appendChild(grid);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// ACCORDION
+// ══════════════════════════════════════════════════════
+function toggleStep(key) {
+  const el = document.getElementById(`step-${key}`);
+  const isOpen = el.classList.contains('open');
+  el.classList.toggle('open', !isOpen);
+}
+function expandAll() {
+  STEPS.forEach(s => document.getElementById(`step-${s.key}`).classList.add('open'));
+}
+function collapseAll() {
+  STEPS.forEach(s => document.getElementById(`step-${s.key}`).classList.remove('open'));
+}
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+function selectSingle(key, val) {
+  state[key] = state[key] === val ? null : val;
+  document.querySelectorAll(`[data-key="${key}"]`).forEach(el => {
+    const isSel = el.dataset.val === state[key];
+    el.classList.toggle('selected', isSel);
+  });
+  updateBadge(key);
+  updateOutput();
+  autoAdvance(key);
+}
+
+function toggleMulti(key, val, el) {
+  const idx = state[key].indexOf(val);
+  if (idx > -1) {
+    state[key].splice(idx, 1);
+    el.classList.remove('selected', 'checked');
+  } else {
+    state[key].push(val);
+    el.classList.add(key === 'surroundings' ? 'checked' : 'selected');
+  }
+  updateBadge(key);
+  updateOutput();
+}
+
+function selectAllSurroundings() {
+  state['surroundings'] = [...DATA['surroundings']];
+  document.querySelectorAll('[data-key="surroundings"]').forEach(el => el.classList.add('checked'));
+  updateBadge('surroundings');
+  updateOutput();
+}
+function clearSurroundings() {
+  state['surroundings'] = [];
+  document.querySelectorAll('[data-key="surroundings"]').forEach(el => el.classList.remove('checked'));
+  updateBadge('surroundings');
+  updateOutput();
+}
+
+function autoAdvance(key) {
+  // after selecting a single item, open the next step
+  const idx = STEPS.findIndex(s => s.key === key);
+  if (idx >= 0 && idx < STEPS.length - 1 && !STEPS[idx].multi) {
+    const curr = document.getElementById(`step-${key}`);
+    curr.classList.remove('open');
+    const next = document.getElementById(`step-${STEPS[idx + 1].key}`);
+    next.classList.add('open');
+    // scroll to next
+    setTimeout(() => {
+      const rect = next.getBoundingClientRect();
+      const panel = next.closest('.wizard-panel');
+      panel.scrollBy({ top: rect.top - 80, behavior: 'smooth' });
+    }, 100);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// BADGE
+// ══════════════════════════════════════════════════════
+function updateBadge(key) {
+  const badge = document.getElementById(`badge-${key}`);
+  const stepEl = document.getElementById(`step-${key}`);
+  const val = state[key];
+  const isEmpty = Array.isArray(val) ? val.length === 0 : val === null;
+  if (isEmpty) {
+    badge.textContent = '—';
+    badge.className = 'step-badge empty';
+    stepEl.classList.remove('has-selection');
+  } else {
+    const count = Array.isArray(val) ? val.length : 1;
+    badge.textContent = Array.isArray(val) ? `${count} selected` : val.split(' ').slice(0, 3).join(' ') + (val.split(' ').length > 3 ? '…' : '');
+    badge.className = 'step-badge filled';
+    stepEl.classList.add('has-selection');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// PROGRESS
+// ══════════════════════════════════════════════════════
+function countSelections() {
+  let n = 0;
+  STEPS.forEach(s => {
+    const v = state[s.key];
+    if (Array.isArray(v) ? v.length > 0 : v !== null) n++;
+  });
+  return n;
+}
+
+function updateProgress() {
+  const total = STEPS.length;
+  const done = countSelections();
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${done} / ${total}`;
+  document.getElementById('selCount').textContent = done;
+  document.getElementById('fabCount').textContent = done;
+}
+
+// ══════════════════════════════════════════════════════
+// OUTPUT
+// ══════════════════════════════════════════════════════
+function buildPromptLines() {
+  const lines = [];
+  lines.push(`Transform this uploaded Revit residential building screenshot into a high-end photorealistic architectural render. Closely follow the original geometry, massing, and floor count. Maintain the exact locations of façade openings and balconies, allowing only minor volumetric adjustments necessary to accommodate realistic material thickness (like stone cladding or aluminum fins). Preserve the roof shape, structural proportions, window locations, and overall architectural intent. Do not change the input aspect ratio.`);
+  lines.push('');
+  lines.push(`Replace the raw Revit appearance with realistic residential materials, refined details, and contextual surroundings.`);
+  lines.push('');
+  if (state.facade)                  lines.push(`Main façade material: ${state.facade}.`);
+  if (state.accent && state.accent.length) lines.push(`Accent materials: ${state.accent.join(', ')}.`);
+  if (state.color)                   lines.push(`Color palette: ${state.color}.`);
+  if (state.windowFrame)             lines.push(`Window frame style: ${state.windowFrame}.`);
+  if (state.glass)                   lines.push(`Glass type: ${state.glass}.`);
+  if (state.shading)                 lines.push(`Shading elements: ${state.shading}.`);
+  if (state.balconyRailing)          lines.push(`Balcony railing: ${state.balconyRailing}.`);
+  if (state.balconyStyle)            lines.push(`Balcony style: ${state.balconyStyle}.`);
+  if (state.terraceDetails && state.terraceDetails.length) lines.push(`Terrace details: ${state.terraceDetails.join(', ')}.`);
+  if (state.roof)                    lines.push(`Roof design: ${state.roof}.`);
+  if (state.entrance)                lines.push(`Entrance type: ${state.entrance}.`);
+  if (state.groundFloor)             lines.push(`Ground floor use: ${state.groundFloor}.`);
+  if (state.door)                    lines.push(`Door style: ${state.door}.`);
+  lines.push('');
+  if (state.location)                lines.push(`Set the building in: ${state.location}.`);
+  if (state.surroundings && state.surroundings.length) {
+    lines.push('');
+    lines.push(`Add realistic residential surroundings including: ${state.surroundings.join(', ')}.`);
+  }
+  lines.push('');
+  if (state.lighting)                lines.push(`Lighting mood: ${state.lighting}.`);
+  if (state.camera)                  lines.push(`Camera view: ${state.camera}.`);
+  lines.push('');
+  lines.push(`Rendering style: ultra realistic, premium residential visualization, high detail, realistic materials, sharp textures, cinematic shadows, natural reflections, soft ambient light, architectural magazine quality, developer marketing render, elegant composition, photorealistic, architectural visualization quality.`);
+  lines.push('');
+  lines.push(`Important: Follow original geometry closely, allowing for material thickness. Keep all floors exactly as original. Keep balcony locations unchanged. Keep façade proportions unchanged. Do not invent extra masses unless subtle landscape elements. Improve realism only. Maintain clean scale and perspective. Respect original architectural design. Do not change the input aspect ratio.`);
+  lines.push('');
+  lines.push(`Use luxury residential real estate marketing style suitable for billboard, brochure, Instagram, and sales campaign.`);
+  return lines;
+}
+
+function updateOutput() {
+  updateProgress();
+  updatePicksStrip();
+  if (outputMode === 'video') { renderVideoOutput(); return; }
+  const lines = buildPromptLines();
+  const text = lines.join('\n');
+
+  // word count
+  const words = text.split(/\s+/).filter(Boolean).length;
+  document.getElementById('wordCount').textContent = `${words} words`;
+
+  const n = countSelections();
+  document.getElementById('selectionCount').textContent = `${n} selection${n !== 1 ? 's' : ''}`;
+
+  // render with highlighted selections
+  const outputBox = document.getElementById('outputBox');
+  outputBox.innerHTML = '';
+
+  // Build highlighted output
+  const selectionValues = [];
+  STEPS.forEach(s => {
+    const v = state[s.key];
+    if (Array.isArray(v)) v.forEach(x => selectionValues.push(x));
+    else if (v) selectionValues.push(v);
+  });
+
+  // Sort by length desc so longer matches take precedence
+  selectionValues.sort((a, b) => b.length - a.length);
+
+  lines.forEach((line, li) => {
+    if (line === '') {
+      outputBox.appendChild(document.createElement('br'));
+      return;
+    }
+    const p = document.createElement('p');
+    p.style.cssText = 'margin-bottom:4px;';
+    let remaining = line;
+    let html = '';
+
+    // Highlight any selection values
+    let tempLine = line;
+    selectionValues.forEach(v => {
+      if (tempLine.includes(v)) {
+        tempLine = tempLine.split(v).join(`__SEL__${v}__ENDSEL__`);
+      }
+    });
+
+    const parts = tempLine.split(/(__SEL__|__ENDSEL__)/);
+    let inSel = false;
+    parts.forEach(part => {
+      if (part === '__SEL__') { inSel = true; return; }
+      if (part === '__ENDSEL__') { inSel = false; return; }
+      if (inSel) {
+        html += `<span style="color:#fff;font-weight:500;">${part}</span>`;
+      } else {
+        html += `<span style="color:rgba(255,255,255,0.45);">${part}</span>`;
+      }
+    });
+    p.innerHTML = html;
+    outputBox.appendChild(p);
+  });
+}
+
+function printPrompt() {
+  // Save current state to localStorage so the print page can read it
+  localStorage.setItem('revit_print_state', JSON.stringify(state));
+  window.open('Revit Prompt Builder v2-print.html', '_blank');
+}
+
+function copyPrompt() {
+  let text;
+  if (outputMode === 'video' && videoState.mode === 'sequence') {
+    text = buildSequencePrompts().map(function(c){ return c.label + '\n' + c.text; }).join('\n\n');
+  } else if (outputMode === 'video') {
+    text = buildVideoPromptLines().join('\n');
+  } else {
+    text = buildPromptLines().join('\n');
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7L5.5 10L11.5 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Copied!`;
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="4" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 4V2.5A1.5 1.5 0 015.5 1H11.5A1.5 1.5 0 0113 2.5V8.5A1.5 1.5 0 0111.5 10H10" stroke="currentColor" stroke-width="1.5"/></svg> Copy Prompt`;
+      btn.classList.remove('copied');
+    }, 2400);
+  });
+}
+
+function resetAll() {
+  STEPS.forEach(s => { state[s.key] = s.multi ? [] : null; });
+  document.querySelectorAll('.mat-card,.chip,.color-chip').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.check-item').forEach(el => el.classList.remove('checked'));
+  STEPS.forEach(s => updateBadge(s.key));
+  updateOutput();
+  updatePicksStrip();
+}
+
+// ══════════════════════════════════════════════════════
+// MOBILE SHEET
+// ══════════════════════════════════════════════════════
+function toggleSheet() {
+  const panel = document.getElementById('outputPanel');
+  panel.classList.contains('open') ? closeSheet() : openSheet();
+}
+function openSheet() {
+  document.getElementById('outputPanel').classList.add('open');
+  document.getElementById('backdrop').classList.add('visible');
+  const fab = document.getElementById('fabBtn');
+  fab.style.opacity = '0'; fab.style.pointerEvents = 'none';
+}
+function closeSheet() {
+  document.getElementById('outputPanel').classList.remove('open');
+  document.getElementById('backdrop').classList.remove('visible');
+  const fab = document.getElementById('fabBtn');
+  fab.style.opacity = '1'; fab.style.pointerEvents = 'auto';
+}
+
+// ══════════════════════════════════════════════════════
+// TWEAKS
+// ══════════════════════════════════════════════════════
+function closeTweaks() {
+  document.getElementById('tweaksPanel').classList.remove('visible');
+  window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+}
+function setCardSize(sz) {
+  const sizes = { sm: { w: '110px', h: '72px' }, md: { w: '136px', h: '90px' }, lg: { w: '164px', h: '108px' } };
+  const { w, h } = sizes[sz] || sizes.md;
+  document.documentElement.style.setProperty('--card-w', w);
+  document.documentElement.style.setProperty('--card-img-h', h);
+  document.querySelectorAll('[onclick^="setCardSize"]').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[onclick="setCardSize('${sz}')"]`).classList.add('active');
+}
+function setTheme(t) {
+  const themes = {
+    warm: { bg:'#EDF2EE', bg2:'#E1EBE3', surface:'#FFFFFF', surface2:'#E8F0EA', border:'#C8DDD0', border2:'#AECFB8', text:'#111C15', accent:'#2D6044' },
+    cool: { bg:'#EEF3F8', bg2:'#E2EAF2', surface:'#FFFFFF', surface2:'#E8EFF8', border:'#C8D8E8', border2:'#A8C0D8', text:'#141C28', accent:'#2558A0' },
+    dark: { bg:'#080C0A', bg2:'#0E1610', surface:'#121A14', surface2:'#162018', border:'#1A3020', border2:'#224030', text:'#C8F0D8', accent:'#22C060' },
+  };
+  const th = themes[t] || themes.warm;
+  const root = document.documentElement;
+  Object.entries(th).forEach(([k, v]) => root.style.setProperty(`--${k}`, v));
+  document.querySelectorAll('[onclick^="setTheme"]').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[onclick="setTheme('${t}')"]`).classList.add('active');
+}
+
+// Tweaks protocol
+window.addEventListener('message', e => {
+  if (e.data?.type === '__activate_edit_mode')   document.getElementById('tweaksPanel').classList.add('visible');
+  if (e.data?.type === '__deactivate_edit_mode') document.getElementById('tweaksPanel').classList.remove('visible');
+});
+window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+
+// ══════════════════════════════════════════════════════
+// FEATURE 2: CARD HOVER PREVIEW POPUP
+// ══════════════════════════════════════════════════════
+let previewTimeout = null;
+const popup = document.getElementById('cardPreviewPopup');
+
+function showCardPreview(card, val, keyword, gradient, seed) {
+  clearTimeout(previewTimeout);
+  previewTimeout = setTimeout(() => {
+    // Position popup
+    const rect = card.getBoundingClientRect();
+    const popW = 220, popH = 180;
+    let left = rect.right + 10;
+    let top  = rect.top + rect.height / 2 - popH / 2;
+    if (left + popW > window.innerWidth - 10) left = rect.left - popW - 10;
+    if (top < 10) top = 10;
+    if (top + popH > window.innerHeight - 10) top = window.innerHeight - popH - 10;
+
+    popup.style.left = left + 'px';
+    popup.style.top  = top + 'px';
+
+    // set content
+    const bgEl  = document.getElementById('cardPreviewBg');
+    const imgEl = document.getElementById('cardPreviewImg');
+    const nameEl = document.getElementById('cardPreviewName');
+    bgEl.style.background = gradient || '';
+    nameEl.textContent = val;
+    imgEl.style.opacity = '0';
+    imgEl.classList.remove('loaded');
+
+    // Show a sharp photo in the hover preview only if a custom URL is set.
+    const previewCustom = IMG_URLS[val];
+    if (previewCustom && previewCustom.trim() !== '') {
+      const url = previewCustom.trim();
+      const tmp = new Image();
+      tmp.onload = () => {
+        imgEl.src = url;
+        imgEl.style.opacity = '1';
+      };
+      tmp.src = url;
+    }
+
+    popup.classList.add('visible');
+  }, 320);
+}
+
+function hideCardPreview() {
+  clearTimeout(previewTimeout);
+  popup.classList.remove('visible');
+}
+
+// ══════════════════════════════════════════════════════
+// FEATURE 4: SELECTED THUMBNAILS STRIP
+// ══════════════════════════════════════════════════════
+function updatePicksStrip() {
+  const row   = document.getElementById('picksThumbsRow');
+  const empty = document.getElementById('picksEmpty');
+  row.innerHTML = '';
+
+  const allPicks = []; // { val, key }
+  STEPS.forEach(s => {
+    if (!CARD_KEYS.includes(s.key)) return; // only card sections
+    const v = state[s.key];
+    if (Array.isArray(v)) v.forEach(x => allPicks.push({ val: x, key: s.key }));
+    else if (v) allPicks.push({ val: v, key: s.key });
+  });
+
+  if (allPicks.length === 0) {
+    const em = document.createElement('div');
+    em.className = 'picks-empty';
+    em.textContent = '— none yet';
+    row.appendChild(em);
+    return;
+  }
+
+  allPicks.forEach(({ val, key }, idx) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'pick-thumb';
+
+    const bg = document.createElement('div');
+    bg.className = 'pick-thumb-bg';
+    bg.style.background = VISUALS[val] || '#aaa';
+    thumb.appendChild(bg);
+
+    const img = document.createElement('img');
+    img.alt = val;
+    const customUrl = IMG_URLS[val];
+    if (customUrl && customUrl.trim() !== '') {
+      const url = customUrl.trim();
+      const tmp = new Image();
+      tmp.onload = () => { img.src = url; img.classList.add('loaded'); };
+      tmp.src = url;
+    }
+    thumb.appendChild(img);
+
+    const tip = document.createElement('div');
+    tip.className = 'pick-thumb-tip';
+    tip.textContent = val;
+    thumb.appendChild(tip);
+
+    row.appendChild(thumb);
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// FEATURE 5: SAVE / LOAD PRESETS
+// ══════════════════════════════════════════════════════
+function captureVideoConfig(){
+  return {
+    outputMode: outputMode,
+    mode: videoState.mode,
+    ratio: videoState.ratio,
+    camera: videoState.camera,
+    chain: videoState.chain,
+    subject: (document.getElementById('vpSubject') || {}).value || '',
+    pacing: (document.getElementById('vpPacing') || {}).value || '',
+    direction: (document.getElementById('vpDirection') || {}).value || 'cw',
+    inheritLight: document.getElementById('vpInheritLight').checked,
+    geo: document.getElementById('vpGeo').checked,
+    noText: document.getElementById('vpNoText').checked,
+    noPeople: document.getElementById('vpNoPeople').checked,
+    audio: document.getElementById('vpAudio').checked
+  };
+}
+
+function applyVideoConfig(v){
+  if (!v) return;
+  var subj = document.getElementById('vpSubject');
+  if (subj) subj.value = v.subject || SUBJECT_DEFAULT;
+  var pac = document.getElementById('vpPacing');
+  if (pac && v.pacing) pac.value = v.pacing;
+  var dir = document.getElementById('vpDirection');
+  if (dir && v.direction) dir.value = v.direction;
+  document.getElementById('vpInheritLight').checked = (v.inheritLight !== false);
+  document.getElementById('vpGeo').checked = (v.geo !== false);
+  document.getElementById('vpNoText').checked = (v.noText !== false);
+  document.getElementById('vpNoPeople').checked = (v.noPeople !== false);
+  document.getElementById('vpAudio').checked = (v.audio !== false);
+  videoState.ratio = v.ratio || '16:9';
+  videoState.chain = v.chain || 3;
+  document.getElementById('vpChainCount').textContent = videoState.chain;
+  document.getElementById('vpClipNote').textContent = (videoState.chain - 1) + ' clips';
+  var rbtns = document.querySelectorAll('.vp-ratio');
+  for (var i = 0; i < rbtns.length; i++){ rbtns[i].classList.toggle('active', rbtns[i].getAttribute('data-vr') === videoState.ratio); }
+  setVideoMode(v.mode || 'orbit');
+  if ((v.mode || 'orbit') !== 'sequence'){
+    videoState.camera = v.camera || 0;
+    var camSel = document.getElementById('vpCamera');
+    if (camSel) camSel.value = videoState.camera;
+  }
+  setOutputMode(v.outputMode || 'image');
+}
+
+const PRESETS_KEY = 'presets_residential';
+const FB_PRESETS_PATH = 'presets_residential';
+try {
+  if (localStorage.getItem(PRESETS_KEY) === null) {
+    var _oldPresets = localStorage.getItem('revit_prompt_presets_v2');
+    if (_oldPresets) localStorage.setItem(PRESETS_KEY, _oldPresets);
+  }
+} catch (e) {}
+
+function loadPresetsFromStorage() {
+  try { return JSON.parse(localStorage.getItem(PRESETS_KEY) || '[]'); }
+  catch { return []; }
+}
+function savePresetsToStorage(presets) {
+  localStorage.setItem(PRESETS_KEY, JSON.stringify(presets));
+  if (window.firebaseReady) {
+    if (presets && presets.length > 0) { window.fbSet(FB_PRESETS_PATH, presets); }
+    else { window.fbRemove(FB_PRESETS_PATH); }
+  }
+}
+
+function setPresetSyncLabel(txt, color){
+  var el = document.getElementById('presetSync');
+  if (el){ el.textContent = txt; el.style.color = color || 'var(--text-dim)'; }
+}
+
+function attachPresetSync(){
+  if (!window.firebaseReady || !window.fbListen){ setPresetSyncLabel('Local only'); return; }
+  setPresetSyncLabel('Synced', 'var(--accent2)');
+  window.fbListen(FB_PRESETS_PATH, function(data){
+    var arr = (data && Array.isArray(data)) ? data : [];
+    localStorage.setItem(PRESETS_KEY, JSON.stringify(arr));
+    renderPresetChips();
+  });
+}
+
+function savePreset() {
+  const name = prompt('Name this preset:', `Preset ${loadPresetsFromStorage().length + 1}`);
+  if (!name) return;
+  const presets = loadPresetsFromStorage();
+  presets.push({ name, state: JSON.parse(JSON.stringify(state)), video: captureVideoConfig() });
+  savePresetsToStorage(presets);
+  renderPresetChips();
+}
+
+function loadPreset(idx) {
+  const presets = loadPresetsFromStorage();
+  const p = presets[idx];
+  if (!p) return;
+  // restore state
+  Object.keys(p.state).forEach(k => { state[k] = p.state[k]; });
+  // update UI
+  STEPS.forEach(s => {
+    const v = state[s.key];
+    if (s.key === 'surroundings') {
+      document.querySelectorAll('[data-key="surroundings"]').forEach(el => {
+        el.classList.toggle('checked', Array.isArray(v) && v.includes(el.dataset.val));
+      });
+    } else if (Array.isArray(v)) {
+      document.querySelectorAll(`[data-key="${s.key}"]`).forEach(el => {
+        el.classList.toggle('selected', v.includes(el.dataset.val));
+      });
+    } else {
+      document.querySelectorAll(`[data-key="${s.key}"]`).forEach(el => {
+        el.classList.toggle('selected', el.dataset.val === v);
+      });
+    }
+    updateBadge(s.key);
+  });
+  applyVideoConfig(p.video);
+  updateOutput();
+  updatePicksStrip();
+}
+
+function deletePreset(idx, e) {
+  e.stopPropagation();
+  const presets = loadPresetsFromStorage();
+  presets.splice(idx, 1);
+  savePresetsToStorage(presets);
+  renderPresetChips();
+}
+
+function renderPresetChips() {
+  const container = document.getElementById('presetChips');
+  container.innerHTML = '';
+  const presets = loadPresetsFromStorage();
+  presets.forEach((p, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'preset-chip';
+    chip.onclick = () => loadPreset(idx);
+    chip.innerHTML = `${p.name}<span class="preset-del" onclick="deletePreset(${idx}, event)">×</span>`;
+    container.appendChild(chip);
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+buildWizard();
+renderPresetChips();
+initVideoUI();
+updateOutput();
+updatePicksStrip();
+if (window.firebaseReady) attachPresetSync();
+else document.addEventListener('firebase-ready', attachPresetSync);
+</script>
+</body>
+</html>

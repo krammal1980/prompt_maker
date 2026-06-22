@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Prompt Library</title>
+
+<!-- PWA Meta Tags -->
+<meta name="application-name" content="Prompt Library">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Prompts">
+<meta name="theme-color" content="#0A0E13">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMGUxNjIxIi8+CiAgPHJlY3QgeD0iMjIiIHk9IjIwIiB3aWR0aD0iNTYiIGhlaWdodD0iNjIiIHJ4PSI2IiBmaWxsPSIjMTUyMDMwIiBzdHJva2U9IiM1YjliZDUiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgPGxpbmUgeDE9IjMyIiB5MT0iMzYiIHgyPSI2OCIgeTI9IjM2IiBzdHJva2U9IiM1YjliZDUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGxpbmUgeDE9IjMyIiB5MT0iNDgiIHgyPSI2OCIgeTI9IjQ4IiBzdHJva2U9IiM0ZWM5YTAiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGxpbmUgeDE9IjMyIiB5MT0iNjAiIHgyPSI1OCIgeTI9IjYwIiBzdHJva2U9IiM1YjliZDUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGNpcmNsZSBjeD0iNjgiIGN5PSI2OCIgcj0iMyIgZmlsbD0iIzRlYzlhMCIvPgo8L3N2Zz4=">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMGUxNjIxIi8+CiAgPHJlY3QgeD0iMjIiIHk9IjIwIiB3aWR0aD0iNTYiIGhlaWdodD0iNjIiIHJ4PSI2IiBmaWxsPSIjMTUyMDMwIiBzdHJva2U9IiM1YjliZDUiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgPGxpbmUgeDE9IjMyIiB5MT0iMzYiIHgyPSI2OCIgeTI9IjM2IiBzdHJva2U9IiM1YjliZDUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGxpbmUgeDE9IjMyIiB5MT0iNDgiIHgyPSI2OCIgeTI9IjQ4IiBzdHJva2U9IiM0ZWM5YTAiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGxpbmUgeDE9IjMyIiB5MT0iNjAiIHgyPSI1OCIgeTI9IjYwIiBzdHJva2U9IiM1YjliZDUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGNpcmNsZSBjeD0iNjgiIGN5PSI2OCIgcj0iMyIgZmlsbD0iIzRlYzlhMCIvPgo8L3N2Zz4=">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=IBM+Plex+Mono:wght@300;400;500&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- ===== FIREBASE SYNC =====
+     Paste your firebaseConfig below (Firebase Console > Project Settings > Your Apps > Web).
+     If left as-is (apiKey: "PASTE_YOUR_API_KEY_HERE"), the app silently runs localStorage-only
+     and the header will show "Local only". -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set, get, onValue, remove }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBYXv7aVj4OPakGFs5Da4rTbyfZMKQIUsU",
+    authDomain: "prompt-studio-c9fa4.firebaseapp.com",
+    databaseURL: "https://prompt-studio-c9fa4-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "prompt-studio-c9fa4",
+    storageBucket: "prompt-studio-c9fa4.firebasestorage.app",
+    messagingSenderId: "570949395216",
+    appId: "1:570949395216:web:56c5c1a174a6910e613b95"
+  };
+
+  if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY_HERE") {
+    try {
+      const app = initializeApp(firebaseConfig);
+      const db  = getDatabase(app);
+
+      window.fbSet    = (path, data) => set(ref(db, path), data);
+      window.fbGet    = (path) => get(ref(db, path)).then(s => s.exists() ? s.val() : null);
+      window.fbRemove = (path) => remove(ref(db, path));
+      window.fbListen = (path, cb) => onValue(ref(db, path),
+        snap => cb(snap.exists() ? snap.val() : null),
+        err => console.warn('Firebase listen error:', err));
+
+      window.firebaseReady = true;
+      document.dispatchEvent(new Event('firebase-ready'));
+    } catch (e) {
+      console.warn('Firebase init failed, running localStorage-only:', e);
+    }
+  }
+</script>
+<style>
+  :root{
+    --bg:#0A0E13;
+    --surface:#141B24;
+    --card:#19212C;
+    --border:rgba(210,228,244,0.10);
+    --border2:rgba(210,228,244,0.20);
+    --accent:#6FAEE6;
+    --accent2:#4ec9a0;
+    --danger:#e05a6a;
+    --text:#DCE6F0;
+    --muted:#5E7488;
+    --input-bg:#0F141B;
+    --transition:0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  html,body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Mono',monospace;
+    -webkit-tap-highlight-color:transparent;
+  }
+  h1,h2,h3,.brand,.btn,.tab,.cat-name,.pcard-title{
+    font-family:'Space Grotesk',sans-serif;
+  }
+  a{color:var(--accent);}
+
+  /* ---------- layout ---------- */
+  #app{
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+  }
+  /* SITE HEADER (matches studio pages) */
+  .site-header{
+    background:#06090D; padding:0 24px; height:58px;
+    display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:100; border-bottom:1px solid var(--border);
+  }
+  .header-left{display:flex; align-items:baseline; gap:14px; min-width:0;}
+  .header-logo{font-family:'Cormorant Garamond',serif; font-style:italic; font-size:22px; font-weight:300; color:#fff; line-height:1; white-space:nowrap;}
+  .header-logo span{color:var(--accent);}
+  .header-sep{width:1px; height:16px; background:rgba(255,255,255,0.18);}
+  .header-tag{font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.4); white-space:nowrap;}
+  .header-nav{display:flex; align-items:center; gap:2px;}
+  .header-nav a{font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.5); text-decoration:none; padding:6px 12px; border-radius:20px; transition:all var(--transition);}
+  .header-nav a:hover{color:#fff; background:rgba(255,255,255,0.08);}
+  .header-nav a.active{color:#061018; background:var(--accent);}
+
+  /* APP TOOLBAR */
+  .app-toolbar{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    max-width:1280px; margin:0 auto; width:100%; padding:14px 16px 0;
+  }
+  .sync-status{font-size:10px; color:var(--muted); white-space:nowrap;}
+  .sync-dot{width:9px;height:9px;border-radius:50%;background:var(--accent2);box-shadow:0 0 8px var(--accent2); flex-shrink:0;}
+
+  @media (max-width:780px){
+    .site-header{padding:0 14px; height:auto; flex-wrap:wrap; gap:6px; padding-top:8px; padding-bottom:8px;}
+    .header-tag{display:none;}
+    .header-nav a{padding:5px 9px; letter-spacing:0.04em;}
+    .app-toolbar{padding:12px 12px 0;}
+  }
+
+  .search-wrap{
+    flex:1 1 220px; min-width:160px; position:relative;
+  }
+  .search-wrap input{
+    width:100%; padding:10px 12px 10px 34px;
+    background:var(--input-bg); border:1px solid var(--border);
+    border-radius:10px; color:var(--text); font-family:'IBM Plex Mono',monospace;
+    font-size:14px;
+  }
+  .search-wrap input:focus{outline:none;border-color:var(--accent);}
+  .search-wrap svg{position:absolute; left:10px; top:50%; transform:translateY(-50%); opacity:.55;}
+
+  .btn{
+    background:var(--card); color:var(--text); border:1px solid var(--border);
+    padding:10px 14px; border-radius:10px; font-size:13px; font-weight:700;
+    cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+    white-space:nowrap; transition:.15s border-color,.15s transform;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn:hover{border-color:var(--accent);}
+  .btn-primary{background:var(--accent); color:#061018; border-color:var(--accent);}
+  .btn-primary:hover{border-color:var(--accent);filter:brightness(1.08);}
+  .btn-ghost{background:transparent;}
+  .btn-sm{padding:6px 10px; font-size:12px; border-radius:8px;}
+  .btn-icon{padding:8px; border-radius:8px;}
+  .btn-danger:hover{border-color:var(--danger); color:var(--danger);}
+
+  main{
+    flex:1; display:flex; width:100%; max-width:1280px; margin:0 auto;
+    padding:16px; gap:16px; align-items:flex-start;
+  }
+
+  /* ---------- sidebar (categories) ---------- */
+  #sidebar{
+    width:220px; flex-shrink:0;
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:14px; position:sticky; top:78px;
+  }
+  #sidebar h3{margin:0 0 10px; font-size:12px; letter-spacing:.08em; color:var(--muted); text-transform:uppercase;}
+  .cat-list{display:flex; flex-direction:column; gap:4px;}
+  .cat-item{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 10px; border-radius:8px; cursor:pointer; font-size:13.5px;
+    color:var(--text); border:1px solid transparent;
+  }
+  .cat-item:hover{background:var(--card);}
+  .cat-item.active{background:var(--card); border-color:var(--accent); color:var(--accent);}
+  .cat-name{display:flex;align-items:center;gap:8px; font-weight:600; overflow:hidden; text-overflow:ellipsis;}
+  .cat-count{font-size:11px; color:var(--muted); background:var(--bg); padding:2px 7px; border-radius:20px;}
+  .cat-item.active .cat-count{color:var(--accent);}
+  .swatch{width:8px;height:8px;border-radius:50%; flex-shrink:0;}
+  .sidebar-foot{margin-top:14px; padding-top:12px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:8px;}
+
+  /* ---------- prompt grid ---------- */
+  #content{flex:1; min-width:0;}
+  .toolbar2{display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;}
+  .toolbar2 select{
+    background:var(--input-bg); color:var(--text); border:1px solid var(--border);
+    border-radius:8px; padding:8px 10px; font-family:'IBM Plex Mono',monospace; font-size:13px;
+  }
+  .result-count{color:var(--muted); font-size:12.5px; margin-left:auto;}
+
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:14px;
+  }
+  .pcard{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:16px; display:flex; flex-direction:column; gap:10px;
+    transition:.15s border-color, .15s transform;
+  }
+  .pcard:hover{border-color:var(--accent);}
+  .pcard-top{display:flex; align-items:flex-start; justify-content:space-between; gap:8px;}
+  .pcard-title{font-size:15.5px; font-weight:700; color:var(--text); line-height:1.3;}
+  .star-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:17px;padding:2px;line-height:1;flex-shrink:0;}
+  .star-btn.active{color:#f2c14e;}
+  .pcard-badges{display:flex; flex-wrap:wrap; gap:6px;}
+  .badge{
+    font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:20px;
+    background:var(--card); border:1px solid var(--border); color:var(--muted);
+    display:inline-flex; align-items:center; gap:5px; text-transform:uppercase; letter-spacing:.03em;
+  }
+  .tag-chip{
+    font-size:10.5px; padding:3px 8px; border-radius:20px; background:var(--bg);
+    color:var(--accent2); border:1px solid var(--border);
+  }
+  .pcard-body{
+    font-size:13px; color:var(--muted); line-height:1.5;
+    max-height:78px; overflow:hidden; white-space:pre-wrap; word-break:break-word;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .pcard-foot{display:flex; gap:6px; flex-wrap:wrap; margin-top:auto; padding-top:6px;}
+  .pcard-foot .btn{flex:1; justify-content:center;}
+
+  .empty-state{
+    grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--muted);
+  }
+  .empty-state svg{opacity:.4; margin-bottom:12px;}
+
+  /* ---------- modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(5,9,15,.65); backdrop-filter:blur(2px);
+    display:none; align-items:flex-start; justify-content:center; z-index:100; padding:24px 14px;
+    overflow-y:auto;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    width:100%; max-width:560px; padding:22px; margin-top:20px;
+  }
+  .modal h2{margin:0 0 16px; font-size:18px;}
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block; font-size:11.5px; font-weight:700; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;
+  }
+  .field input[type=text], .field textarea, .field select{
+    width:100%; background:var(--input-bg); border:1px solid var(--border);
+    border-radius:9px; padding:10px 12px; color:var(--text); font-family:'IBM Plex Mono',monospace;
+    font-size:14px;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus{outline:none; border-color:var(--accent);}
+  .field textarea{resize:vertical; min-height:140px; line-height:1.5;}
+  .field-row{display:flex; gap:10px;}
+  .field-row .field{flex:1;}
+  .newcat-row{display:flex; gap:8px; margin-top:8px;}
+  .newcat-row input{flex:1;}
+  .modal-actions{display:flex; gap:8px; justify-content:flex-end; margin-top:18px;}
+  .color-pick{display:flex; gap:7px; flex-wrap:wrap; margin-top:8px;}
+  .color-pick span{width:22px;height:22px;border-radius:50%;cursor:pointer; border:2px solid transparent;}
+  .color-pick span.sel{border-color:#fff;}
+
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--card); border:1px solid var(--accent2); color:var(--text);
+    padding:11px 18px; border-radius:10px; font-size:13px; font-weight:600;
+    opacity:0; pointer-events:none; transition:.25s; z-index:200; box-shadow:0 8px 24px rgba(0,0,0,.4);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  .site-footer{
+    max-width:1180px; margin:40px auto 0; padding:24px 16px 40px;
+    border-top:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+  }
+  .footer-logo{font-family:'Cormorant Garamond',serif; font-style:italic; font-size:18px; color:var(--text);}
+  .footer-logo span{color:var(--accent);}
+  .footer-credit{font-family:'Cormorant Garamond',serif; font-style:italic; font-size:13px; color:var(--muted); letter-spacing:0.03em;}
+
+  /* ---------- mobile ---------- */
+  .mobile-cats-toggle{display:none;}
+  @media (max-width:780px){
+    main{flex-direction:column; padding:12px;}
+    #sidebar{
+      width:100%; position:static; display:none;
+    }
+    #sidebar.open{display:block;}
+    .mobile-cats-toggle{display:inline-flex;}
+    .brand{font-size:17px;}
+    .grid{grid-template-columns:1fr;}
+    .topbar{gap:8px;}
+    .search-wrap{flex-basis:100%; order:3;}
+  }
+</style>
+</head>
+<body>
+
+
+
+<div id="app">
+
+  <header class="site-header">
+    <div class="header-left">
+      <div class="header-logo">Prompt <span>Studio</span></div>
+      <div class="header-sep"></div>
+      <div class="header-tag">Prompt Library</div>
+    </div>
+    <nav class="header-nav">
+      <a href="index.html">Home</a>
+      <a href="residential.html">Residential</a>
+      <a href="commercial.html">Commercial</a>
+      <a href="prompt-library.html" class="active">Library</a>
+    </nav>
+  </header>
+
+  <div class="app-toolbar">
+    <span class="sync-dot" id="syncDot"></span>
+    <span id="sync-status" class="sync-status">Local only</span>
+    <button class="btn btn-ghost btn-icon mobile-cats-toggle" onclick="toggleSidebar()" title="Categories">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+    </button>
+    <div class="search-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search prompts, tags..." oninput="render()">
+    </div>
+    <button class="btn btn-ghost btn-icon" onclick="exportData()" title="Export JSON">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </button>
+    <button class="btn btn-ghost btn-icon" onclick="document.getElementById('importFile').click()" title="Import JSON">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    <button class="btn btn-primary" onclick="openModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Prompt
+    </button>
+  </div>
+
+  <main>
+    <aside id="sidebar">
+      <h3>Categories</h3>
+      <div class="cat-list" id="catList"></div>
+      <div class="sidebar-foot">
+        <button class="btn btn-sm btn-ghost" style="width:100%; justify-content:center;" onclick="promptNewCategory()">+ New Category</button>
+      </div>
+    </aside>
+
+    <div id="content">
+      <div class="toolbar2">
+        <select id="sortSelect" onchange="render()">
+          <option value="updated">Recently Updated</option>
+          <option value="created">Recently Added</option>
+          <option value="az">Title A-Z</option>
+          <option value="favorite">Favorites First</option>
+        </select>
+        <span class="result-count" id="resultCount"></span>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-logo">Prompt <span>Studio</span></div>
+    <div class="footer-credit">By Eng. Kassem Rammal</div>
+  </footer>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">New Prompt</h2>
+    <input type="hidden" id="editId">
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="fTitle" placeholder="e.g. Bilingual Ad Copy &mdash; Aramoun Launch">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Category</label>
+        <select id="fCategory"></select>
+      </div>
+      <div class="field">
+        <label>Tags <span style="text-transform:none;opacity:.7;">(comma separated)</span></label>
+        <input type="text" id="fTags" placeholder="arabic, video, hook">
+      </div>
+    </div>
+    <div class="field">
+      <label>Prompt Content</label>
+      <textarea id="fContent" placeholder="Write or paste your prompt here..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePrompt()">Save Prompt</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ====================== DATA ====================== */
+const CAT_COLORS = ['#6FAEE6','#4ec9a0','#e0a55a','#c97fe0','#e05a6a','#5ae0c9','#e0d65a','#8a9eff'];
+
+const DEFAULT_CATEGORIES = [
+  {id:'general', name:'General', color:CAT_COLORS[0]},
+  {id:'real-estate', name:'Real Estate', color:CAT_COLORS[1]},
+  {id:'engineering', name:'Engineering', color:CAT_COLORS[2]},
+  {id:'marketing', name:'Marketing', color:CAT_COLORS[3]},
+  {id:'video-ai', name:'Video AI (Higgsfield / Veo)', color:CAT_COLORS[4]}
+];
+
+function seedPrompts(){
+  const now = Date.now();
+  return [
+    {
+      id: uid(),
+      title: 'Higgsfield — Building Fly-Around (Start+End Render)',
+      category: 'video-ai',
+      tags: ['higgsfield','fly-around','seedance','kling'],
+      content: 'Camera: Slow aerial drone fly-around starting from the front elevation, sweeping to reveal the mountain valley views. Descend to show the building entrance and landscaping.\n\nArchitecture: [white marble-tile facade / timber balcony soffits / glass balustrades / gabled red-tile roof]\nSurroundings: Lebanese hillside, pine trees, terraced gardens, clear sky\nTime of day: Golden hour - warm amber sunlight raking across the facade\nMood: Luxury residential, calm, aspirational\nDuration: 8-12 seconds\nAspect ratio: 16:9 (YouTube) or 9:16 (Reels version)\nStyle: Photorealistic, cinematic depth of field, no text overlays\n\nUse the front-elevation render as start_image and the side-elevation render as end_image. Models supporting this pair: Seedance 2.0, Kling 3.0, Cinema Studio 3.0, Seedance 1.5 Pro.',
+      favorite: true, createdAt: now, updatedAt: now
+    },
+    {
+      id: uid(),
+      title: 'Higgsfield — Construction Progress Reel (Trust Builder)',
+      category: 'video-ai',
+      tags: ['higgsfield','construction','before-after'],
+      content: 'Cinematic time-lapse style video of a residential building under active construction in the Lebanese mountains.\n\nShow: Concrete structure at [50% / 70%] completion, workers on scaffolding, crane visible, morning light, dust and activity conveying real progress and momentum.\n\nCut to: Architectural render visualization of the finished building - same angle, seamless transition - showing the completed gleaming facade.\n\nMood: Trustworthy, in-progress, momentum-building. No text overlays. Duration: 8-10 seconds.',
+      favorite: false, createdAt: now, updatedAt: now
+    },
+    {
+      id: uid(),
+      title: 'Veo 3 — Architectural Fly-Around (Reference Building)',
+      category: 'video-ai',
+      tags: ['veo3','gemini','fly-around','archviz'],
+      content: 'Subject: A photorealistic 3D render of a 6-storey Lebanese hillside residential building.\nBuilding details: white marble-tile facade, timber balcony soffits, glass balustrades, gabled red-tile roof, vertical brass LED corner accent strip.\nLocation: Aramoun hillside overlooking Beirut, terraced gardens, city valley backdrop.\nCamera position: Wide establishing shot, eye-level rising to a slight aerial angle.\nCamera movement: Smooth 360-degree orbit around the building, slow and continuous, no jump cuts.\nComposition: Building centered, full elevation visible, negative space for sky.\nLens: 35mm equivalent, shallow depth of field on foreground foliage.\nLighting: Golden hour, warm directional sunlight raking across the facade, soft shadows.\nVisual style: Photorealistic architectural visualization, cinematic color grade, no text overlays.\nAudio: Ambient wind, distant birdsong, no music.\nNegative prompt: no people, no cars, no logos, no warped geometry, no flickering.',
+      favorite: true, createdAt: now, updatedAt: now
+    },
+    {
+      id: uid(),
+      title: 'Nano Banana Pro — Residential Render from Revit Screenshot',
+      category: 'engineering',
+      tags: ['nano-banana','render','revit','residential'],
+      content: 'Transform this Revit screenshot into a photorealistic architectural render.\n\nFacade material: [white natural stone / sintered stone slabs / Dekton Aura / zinc standing seam cladding]\nAccent material: [perforated metal screens / shou sugi ban charred wood / corten steel / vertical terracotta baguettes]\nGlass: Floor-to-ceiling, slight blue tint, visible reflections of sky and surroundings.\nEntrance: Textured GFRC panel entry with integrated lighting.\nColor tone: Warm neutral with oxidized metal accents.\nLighting: Late afternoon sun, soft shadows, realistic ambient occlusion.\nSurroundings: Landscaped garden, paved walkway, mature trees for scale.\nStyle: Ultra-photorealistic, magazine-quality architectural photography, preserve exact geometry and proportions from the source image - do not alter massing or window placement.',
+      favorite: false, createdAt: now, updatedAt: now
+    },
+    {
+      id: uid(),
+      title: 'Bilingual Ad Copy — Apartment Launch (AR/EN)',
+      category: 'marketing',
+      tags: ['arabic','copywriting','social-ad'],
+      content: 'Write a short, high-converting social media ad (Instagram/Facebook) for a new residential apartment launch.\n\nProject: [project name]\nLocation: [Aramoun / Bayader, Mount Lebanon]\nKey selling points: [view, finishing quality, payment plan, delivery date]\nTone: Aspirational, premium, trustworthy - not pushy.\nFormat: 1 strong hook line, 2-3 short benefit lines, 1 clear call-to-action with phone number/WhatsApp link.\nLength: Under 60 words per language.\n\nProvide two versions:\n1) Lebanese-accessible Modern Standard Arabic\n2) English\nKeep both versions emotionally aligned but not literal word-for-word translations of each other.',
+      favorite: false, createdAt: now, updatedAt: now
+    },
+    {
+      id: uid(),
+      title: 'WhatsApp Follow-Up — Interested Buyer',
+      category: 'marketing',
+      tags: ['whatsapp','sales','follow-up'],
+      content: 'Write a warm, professional WhatsApp follow-up message in [Arabic / English] to a lead who viewed a unit but has not responded in 3 days.\n\nContext: [project name], [unit type/area], [price range].\nGoal: Re-open the conversation without sounding desperate, offer one new piece of value (e.g. updated floor plan, payment plan flexibility, limited units remaining), and end with a low-friction question.\nTone: Respectful, concise, no more than 4 sentences.',
+      favorite: false, createdAt: now, updatedAt: now
+    }
+  ];
+}
+
+function loadPrompts(){
+  try{
+    const v = JSON.parse(localStorage.getItem('pl_prompts')||'null');
+    if(v && Array.isArray(v)) return v;
+  }catch(e){}
+  return null; // signal "no local data yet"
+}
+function savePrompts(arr){
+  localStorage.setItem('pl_prompts', JSON.stringify(arr));
+  if(window.firebaseReady){
+    if(arr && arr.length > 0){
+      window.fbSet('prompts', arr).catch(e=>console.warn('Firebase save error:', e));
+    } else {
+      window.fbRemove('prompts').catch(e=>console.warn('Firebase remove error:', e));
+    }
+  }
+}
+function loadCategories(){
+  try{
+    const c = JSON.parse(localStorage.getItem('pl_categories')||'null');
+    if(c && c.length) return c;
+  }catch(e){}
+  return null;
+}
+function saveCategories(arr){
+  localStorage.setItem('pl_categories', JSON.stringify(arr));
+  if(window.firebaseReady){
+    if(arr && arr.length > 0){
+      window.fbSet('categories', arr).catch(e=>console.warn('Firebase save error:', e));
+    } else {
+      window.fbRemove('categories').catch(e=>console.warn('Firebase remove error:', e));
+    }
+  }
+}
+
+let prompts = loadPrompts();
+let categories = loadCategories();
+let firstRun = false;
+if(prompts === null){ prompts = seedPrompts(); firstRun = true; }
+if(categories === null){ categories = DEFAULT_CATEGORIES.slice(); }
+savePrompts(prompts);
+saveCategories(categories);
+
+let activeCategory = 'all';
+
+function updateSyncStatus(msg, color){
+  const el = document.getElementById('sync-status');
+  const dot = document.getElementById('syncDot');
+  if(el){ el.textContent = msg; el.style.color = color || 'var(--muted)'; }
+  if(dot){ dot.style.background = color || 'var(--muted)'; dot.style.boxShadow = '0 0 8px ' + (color || 'var(--muted)'); }
+}
+
+function startSync(){
+  if(!window.firebaseReady) return;
+  updateSyncStatus('Connecting...', '#e0a55a');
+  window.fbListen('prompts', data => {
+    const clean = (data && Array.isArray(data)) ? data : [];
+    if(clean.length === 0 && prompts.length > 0 && !firstRun) return; // avoid wiping local on transient null
+    prompts = clean;
+    localStorage.setItem('pl_prompts', JSON.stringify(clean));
+    render();
+    updateSyncStatus('Synced', '#4ec9a0');
+  });
+  window.fbListen('categories', data => {
+    const clean = (data && Array.isArray(data)) ? data : [];
+    if(clean.length === 0) return;
+    categories = clean;
+    localStorage.setItem('pl_categories', JSON.stringify(clean));
+    render();
+  });
+}
+document.addEventListener('firebase-ready', startSync);
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+/* ====================== RENDER SIDEBAR ====================== */
+function renderSidebar(){
+  const list = document.getElementById('catList');
+  const counts = {};
+  prompts.forEach(p => counts[p.category] = (counts[p.category]||0) + 1);
+  let html = '';
+  html += catItemHtml('all', 'All Prompts', '#6a87a8', prompts.length, activeCategory==='all');
+  categories.forEach(c=>{
+    html += catItemHtml(c.id, c.name, c.color, counts[c.id]||0, activeCategory===c.id);
+  });
+  list.innerHTML = html;
+}
+function catItemHtml(id, name, color, count, active){
+  return '<div class="cat-item'+(active?' active':'')+'" onclick="selectCategory(\''+id+'\')">'+
+    '<span class="cat-name"><span class="swatch" style="background:'+color+'"></span>'+escapeHtml(name)+'</span>'+
+    '<span class="cat-count">'+count+'</span></div>';
+}
+function selectCategory(id){
+  activeCategory = id;
+  if(window.innerWidth <= 780) toggleSidebar(false);
+  render();
+}
+function toggleSidebar(force){
+  const sb = document.getElementById('sidebar');
+  if(force === false){ sb.classList.remove('open'); return; }
+  sb.classList.toggle('open');
+}
+
+/* ====================== RENDER GRID ====================== */
+function categoryById(id){ return categories.find(c=>c.id===id); }
+
+function render(){
+  renderSidebar();
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const sort = document.getElementById('sortSelect').value;
+
+  let list = prompts.filter(p=>{
+    if(activeCategory !== 'all' && p.category !== activeCategory) return false;
+    if(!q) return true;
+    const hay = (p.title+' '+p.content+' '+(p.tags||[]).join(' ')).toLowerCase();
+    return hay.includes(q);
+  });
+
+  list.sort((a,b)=>{
+    if(sort==='az') return a.title.localeCompare(b.title);
+    if(sort==='created') return b.createdAt - a.createdAt;
+    if(sort==='favorite') return (b.favorite?1:0)-(a.favorite?1:0) || b.updatedAt - a.updatedAt;
+    return b.updatedAt - a.updatedAt;
+  });
+
+  document.getElementById('resultCount').textContent = list.length + (list.length===1?' prompt':' prompts');
+
+  const grid = document.getElementById('grid');
+  if(list.length === 0){
+    grid.innerHTML = '<div class="empty-state">'+
+      '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'+
+      '<div>No prompts found. Try a different search or category.</div></div>';
+    return;
+  }
+
+  grid.innerHTML = list.map(p=>{
+    const cat = categoryById(p.category);
+    const catBadge = cat ? '<span class="badge"><span class="swatch" style="background:'+cat.color+'"></span>'+escapeHtml(cat.name)+'</span>' : '';
+    const tags = (p.tags||[]).map(t=>'<span class="tag-chip">#'+escapeHtml(t)+'</span>').join('');
+    return '<div class="pcard">'+
+      '<div class="pcard-top">'+
+        '<div class="pcard-title">'+escapeHtml(p.title||'Untitled')+'</div>'+
+        '<button class="star-btn'+(p.favorite?' active':'')+'" onclick="toggleFavorite(\''+p.id+'\')" title="Favorite">&#9733;</button>'+
+      '</div>'+
+      '<div class="pcard-badges">'+catBadge+tags+'</div>'+
+      '<div class="pcard-body">'+escapeHtml(p.content)+'</div>'+
+      '<div class="pcard-foot">'+
+        '<button class="btn btn-sm" onclick="copyPrompt(\''+p.id+'\')">Copy</button>'+
+        '<button class="btn btn-sm" onclick="duplicatePrompt(\''+p.id+'\')">Duplicate</button>'+
+        '<button class="btn btn-sm" onclick="openModal(\''+p.id+'\')">Edit</button>'+
+        '<button class="btn btn-sm btn-danger" onclick="deletePrompt(\''+p.id+'\')">Delete</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ====================== ACTIONS ====================== */
+function toggleFavorite(id){
+  const p = prompts.find(x=>x.id===id);
+  if(!p) return;
+  p.favorite = !p.favorite;
+  p.updatedAt = Date.now();
+  savePrompts(prompts);
+  render();
+}
+
+function copyPrompt(id){
+  const p = prompts.find(x=>x.id===id);
+  if(!p) return;
+  navigator.clipboard.writeText(p.content).then(()=>{
+    showToast('Copied to clipboard');
+  }).catch(()=>{
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = p.content;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Copied to clipboard');
+  });
+}
+
+function duplicatePrompt(id){
+  const p = prompts.find(x=>x.id===id);
+  if(!p) return;
+  const copy = Object.assign({}, p, {
+    id: uid(),
+    title: p.title + ' (copy)',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    favorite: false
+  });
+  prompts.unshift(copy);
+  savePrompts(prompts);
+  render();
+  showToast('Duplicated &mdash; ready to modify');
+  openModal(copy.id);
+}
+
+function deletePrompt(id){
+  const p = prompts.find(x=>x.id===id);
+  if(!p) return;
+  if(!confirm('Delete "'+(p.title||'Untitled')+'"? This cannot be undone.')) return;
+  prompts = prompts.filter(x=>x.id!==id);
+  savePrompts(prompts);
+  render();
+  showToast('Prompt deleted');
+}
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.innerHTML = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* ====================== MODAL ====================== */
+function populateCategorySelect(selectedId){
+  const sel = document.getElementById('fCategory');
+  sel.innerHTML = categories.map(c=>'<option value="'+c.id+'">'+escapeHtml(c.name)+'</option>').join('');
+  if(selectedId) sel.value = selectedId;
+}
+
+function openModal(id){
+  populateCategorySelect();
+  if(id){
+    const p = prompts.find(x=>x.id===id);
+    if(!p) return;
+    document.getElementById('modalTitle').textContent = 'Edit Prompt';
+    document.getElementById('editId').value = p.id;
+    document.getElementById('fTitle').value = p.title || '';
+    document.getElementById('fCategory').value = p.category || categories[0].id;
+    document.getElementById('fTags').value = (p.tags||[]).join(', ');
+    document.getElementById('fContent').value = p.content || '';
+  } else {
+    document.getElementById('modalTitle').textContent = 'New Prompt';
+    document.getElementById('editId').value = '';
+    document.getElementById('fTitle').value = '';
+    document.getElementById('fCategory').value = (activeCategory!=='all' ? activeCategory : categories[0].id);
+    document.getElementById('fTags').value = '';
+    document.getElementById('fContent').value = '';
+  }
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('fTitle').focus(), 50);
+}
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+document.getElementById('modalOverlay').addEventListener('click', e=>{
+  if(e.target.id === 'modalOverlay') closeModal();
+});
+
+function savePrompt(){
+  const title = document.getElementById('fTitle').value.trim();
+  const content = document.getElementById('fContent').value.trim();
+  if(!content){ alert('Prompt content cannot be empty.'); return; }
+  const category = document.getElementById('fCategory').value;
+  const tags = document.getElementById('fTags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  const editId = document.getElementById('editId').value;
+
+  if(editId){
+    const p = prompts.find(x=>x.id===editId);
+    if(p){
+      p.title = title || 'Untitled';
+      p.category = category;
+      p.tags = tags;
+      p.content = content;
+      p.updatedAt = Date.now();
+    }
+    showToast('Prompt updated');
+  } else {
+    prompts.unshift({
+      id: uid(),
+      title: title || 'Untitled',
+      category: category,
+      tags: tags,
+      content: content,
+      favorite: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    showToast('Prompt saved');
+  }
+  savePrompts(prompts);
+  closeModal();
+  render();
+}
+
+/* ====================== CATEGORY MANAGEMENT ====================== */
+function promptNewCategory(){
+  const name = prompt('New category name:');
+  if(!name || !name.trim()) return;
+  const id = name.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || uid();
+  if(categories.find(c=>c.id===id)){ alert('A category with that name already exists.'); return; }
+  const color = CAT_COLORS[categories.length % CAT_COLORS.length];
+  categories.push({id, name:name.trim(), color});
+  saveCategories(categories);
+  render();
+  showToast('Category added');
+}
+
+/* ====================== IMPORT / EXPORT ====================== */
+function exportData(){
+  const data = {prompts, categories, exportedAt: new Date().toISOString()};
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'prompt-library-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported backup');
+}
+
+function importData(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!data.prompts || !Array.isArray(data.prompts)){ alert('Invalid file format.'); return; }
+      const mode = confirm('Click OK to MERGE with existing prompts, or Cancel to REPLACE all existing prompts.');
+      if(mode){
+        const existingIds = new Set(prompts.map(p=>p.id));
+        data.prompts.forEach(p=>{ if(!existingIds.has(p.id)) prompts.push(p); });
+        if(data.categories) data.categories.forEach(c=>{ if(!categories.find(x=>x.id===c.id)) categories.push(c); });
+      } else {
+        prompts = data.prompts;
+        if(data.categories) categories = data.categories;
+      }
+      savePrompts(prompts);
+      saveCategories(categories);
+      render();
+      showToast('Import complete');
+    }catch(err){
+      alert('Could not read file: ' + err.message);
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+/* ====================== INIT ====================== */
+updateSyncStatus(window.firebaseReady ? 'Connecting...' : 'Local only', window.firebaseReady ? '#e0a55a' : 'var(--muted)');
+render();
+</script>
+</body>
+</html>

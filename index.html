@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Studio — Revit Render Prompts</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=IBM+Plex+Mono:wght@300;400;500&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- PWA -->
+<meta name="application-name" content="Prompt Studio">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Prompt Studio">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0A0E13">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMEEwRTEzIi8+PHJlY3QgeD0iMjYiIHk9IjIyIiB3aWR0aD0iMTEiIGhlaWdodD0iNTYiIHJ4PSIyIiBmaWxsPSIjQzlCODlBIi8+PHJlY3QgeD0iMzkiIHk9IjIyIiB3aWR0aD0iMTEiIGhlaWdodD0iNTYiIHJ4PSIyIiBmaWxsPSIjNkZBRUU2Ii8+PHJlY3QgeD0iNTIiIHk9IjIyIiB3aWR0aD0iMTEiIGhlaWdodD0iNTYiIHJ4PSIyIiBmaWxsPSIjNGVjOWEwIi8+PHJlY3QgeD0iNjUiIHk9IjIyIiB3aWR0aD0iOSIgaGVpZ2h0PSI1NiIgcng9IjIiIGZpbGw9IiM3QTU0MzAiLz48L3N2Zz4=">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMEEwRTEzIi8+PHJlY3QgeD0iMjYiIHk9IjIyIiB3aWR0aD0iMTEiIGhlaWdodD0iNTYiIHJ4PSIyIiBmaWxsPSIjQzlCODlBIi8+PHJlY3QgeD0iMzkiIHk9IjIyIiB3aWR0aD0iMTEiIGhlaWdodD0iNTYiIHJ4PSIyIiBmaWxsPSIjNkZBRUU2Ii8+PHJlY3QgeD0iNTIiIHk9IjIyIiB3aWR0aD0iMTEiIGhlaWdodD0iNTYiIHJ4PSIyIiBmaWxsPSIjNGVjOWEwIi8+PHJlY3QgeD0iNjUiIHk9IjIyIiB3aWR0aD0iOSIgaGVpZ2h0PSI1NiIgcng9IjIiIGZpbGw9IiM3QTU0MzAiLz48L3N2Zz4=">
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJvbXB0IFN0dWRpbyIsInNob3J0X25hbWUiOiJQcm9tcHQgU3R1ZGlvIiwiZGVzY3JpcHRpb24iOiJBcmNoaXRlY3R1cmFsIHJlbmRlciBhbmQgdmlkZW8gcHJvbXB0IGJ1aWxkZXJzIHBsdXMgYSBwcm9tcHQgbGlicmFyeSIsInN0YXJ0X3VybCI6Ii4vaW5kZXguaHRtbCIsInNjb3BlIjoiLi8iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMEEwRTEzIiwidGhlbWVfY29sb3IiOiIjMEEwRTEzIiwib3JpZW50YXRpb24iOiJhbnkiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpSUhacFpYZENiM2c5SWpBZ01DQXhNREFnTVRBd0lqNDhjbVZqZENCM2FXUjBhRDBpTVRBd0lpQm9aV2xuYUhROUlqRXdNQ0lnY25nOUlqSXdJaUJtYVd4c1BTSWpNRUV3UlRFeklpOCtQSEpsWTNRZ2VEMGlNallpSUhrOUlqSXlJaUIzYVdSMGFEMGlNVEVpSUdobGFXZG9kRDBpTlRZaUlISjRQU0l5SWlCbWFXeHNQU0lqUXpsQ09EbEJJaTgrUEhKbFkzUWdlRDBpTXpraUlIazlJakl5SWlCM2FXUjBhRDBpTVRFaUlHaGxhV2RvZEQwaU5UWWlJSEo0UFNJeUlpQm1hV3hzUFNJak5rWkJSVVUySWk4K1BISmxZM1FnZUQwaU5USWlJSGs5SWpJeUlpQjNhV1IwYUQwaU1URWlJR2hsYVdkb2REMGlOVFlpSUhKNFBTSXlJaUJtYVd4c1BTSWpOR1ZqT1dFd0lpOCtQSEpsWTNRZ2VEMGlOalVpSUhrOUlqSXlJaUIzYVdSMGFEMGlPU0lnYUdWcFoyaDBQU0kxTmlJZ2NuZzlJaklpSUdacGJHdzlJaU0zUVRVME16QWlMejQ4TDNOMlp6ND0iLCJzaXplcyI6ImFueSIsInR5cGUiOiJpbWFnZS9zdmcreG1sIiwicHVycG9zZSI6ImFueSBtYXNrYWJsZSJ9XX0=">
+<style>
+:root {
+  --bg:        #0A0E13;
+  --bg2:       #0F141B;
+  --surface:   #141B24;
+  --surface2:  #19212C;
+  --border:    rgba(210,228,244,0.10);
+  --border2:   rgba(210,228,244,0.20);
+  --text:      #DCE6F0;
+  --text-mid:  #94A9BF;
+  --text-dim:  #5E7488;
+  --accent:    #2F5E8C;
+  --accent-light: #6FAEE6;
+  --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── HEADER ── */
+.site-header {
+  background: #06090D;
+  padding: 0 40px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid var(--border);
+}
+.header-left { display: flex; align-items: baseline; gap: 16px; }
+.header-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 22px;
+  font-weight: 300;
+  color: #fff;
+  line-height: 1;
+}
+.header-logo span { color: var(--accent-light); }
+.header-sep { width: 1px; height: 16px; background: rgba(255,255,255,0.18); }
+.header-tag {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+.header-nav { display: flex; align-items: center; gap: 2px; }
+.header-nav a {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  transition: all var(--transition);
+}
+.header-nav a:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.header-nav a.active { color: #fff; background: var(--accent); }
+@media (max-width: 720px) { .header-nav { display: none; } .site-header { padding: 0 20px; } }
+
+/* ── HERO ── */
+.hero {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 84px 40px 64px;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 56px;
+  align-items: center;
+}
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 26px;
+}
+.kicker::before {
+  content: '';
+  width: 22px; height: 1px;
+  background: var(--accent-light);
+}
+.hero h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 300;
+  font-size: clamp(40px, 5.4vw, 72px);
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  color: #fff;
+  text-wrap: balance;
+}
+.hero h1 em {
+  font-style: italic;
+  color: var(--accent-light);
+}
+.hero p.lead {
+  margin-top: 26px;
+  max-width: 30em;
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--text-mid);
+}
+.hero-cta {
+  margin-top: 36px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.btn {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 14px 26px;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid transparent;
+}
+.btn-primary { background: var(--accent-light); color: #061018; }
+.btn-primary:hover { background: #6cf3b1; transform: translateY(-2px); }
+.btn-ghost { background: transparent; border-color: var(--border2); color: var(--text); }
+.btn-ghost:hover { border-color: var(--accent-light); color: var(--accent-light); }
+.btn svg { flex-shrink: 0; }
+
+/* facade composition */
+.facade {
+  display: flex;
+  gap: 6px;
+  height: 420px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  position: relative;
+}
+.facade-band {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+.facade-band::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 46px, rgba(0,0,0,0.18) 46px, rgba(0,0,0,0.18) 48px);
+}
+.facade-tag {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-90deg);
+  transform-origin: center;
+  white-space: nowrap;
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+  z-index: 2;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+}
+
+/* ── DIVIDER LABEL ── */
+.section-head {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+.section-head .num {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+}
+.section-head h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 26px;
+  color: #fff;
+}
+.section-head .rule { flex: 1; height: 1px; background: var(--border); align-self: center; }
+
+/* ── BUILDERS ── */
+.builders {
+  max-width: 1180px;
+  margin: 30px auto 0;
+  padding: 0 40px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+.builder-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+.builder-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border2);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+}
+.builder-preview {
+  height: 168px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  position: relative;
+}
+.builder-preview .pv {
+  flex: 1;
+  border-radius: 4px;
+}
+.builder-body {
+  flex: 1;
+  padding: 24px 26px 26px;
+  display: flex;
+  flex-direction: column;
+}
+.builder-card.residential { background: linear-gradient(180deg, #0F141B 0%, #0A0E13 100%); }
+.builder-card.commercial  { background: linear-gradient(180deg, #141D27 0%, #0F1620 100%); }
+.builder-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-light);
+  margin-bottom: 12px;
+}
+.builder-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.1;
+  color: #fff;
+  margin-bottom: 12px;
+}
+.builder-desc {
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--text-mid);
+  margin-bottom: 22px;
+}
+.builder-meta {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.builder-steps {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+.builder-open {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: gap var(--transition), color var(--transition);
+}
+.builder-card:hover .builder-open { gap: 12px; color: var(--accent-light); }
+
+/* ── HOW IT WORKS ── */
+.how {
+  max-width: 1180px;
+  margin: 30px auto 0;
+  padding: 0 40px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+.how-item {
+  padding: 26px 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.how-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 34px;
+  color: var(--accent-light);
+  line-height: 1;
+  margin-bottom: 16px;
+}
+.how-item h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fff;
+  margin-bottom: 9px;
+}
+.how-item p { font-size: 12px; line-height: 1.75; color: var(--text-mid); }
+
+/* ── FOOTER ── */
+.site-footer {
+  max-width: 1180px;
+  margin: 80px auto 0;
+  padding: 28px 40px 48px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.footer-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 18px;
+  color: var(--text);
+}
+.footer-logo span { color: var(--accent-light); }
+.footer-credit {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-dim);
+  letter-spacing: 0.03em;
+}
+
+.spacer-lg { height: 70px; }
+
+.library-wrap { max-width: 1180px; margin: 30px auto 0; padding: 0 40px; }
+.library-card { display: flex; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; text-decoration: none; background: linear-gradient(180deg,#11202B 0%,#0C141C 100%); transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition); }
+.library-card:hover { transform: translateY(-4px); border-color: var(--border2); box-shadow: 0 24px 60px rgba(0,0,0,0.45); }
+.library-card-left { flex: 1; padding: 28px 30px; display: flex; flex-direction: column; }
+.library-card-lines { width: 210px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; gap: 11px; padding: 24px; background: rgba(111,174,230,0.05); border-left: 1px solid var(--border); }
+.library-card-lines span { height: 8px; border-radius: 5px; background: linear-gradient(90deg, var(--accent-light), transparent); }
+.library-card-lines span:nth-child(1){ width: 92%; }
+.library-card-lines span:nth-child(2){ width: 68%; background: linear-gradient(90deg,#4ec9a0,transparent); }
+.library-card-lines span:nth-child(3){ width: 80%; }
+.library-card-lines span:nth-child(4){ width: 54%; background: linear-gradient(90deg,#4ec9a0,transparent); }
+
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; gap: 40px; padding: 56px 24px 48px; }
+  .facade { height: 300px; }
+  .builders { grid-template-columns: 1fr; }
+  .how { grid-template-columns: 1fr; }
+  .section-head, .builders, .how, .site-footer { padding-left: 24px; padding-right: 24px; }
+  .library-wrap { padding-left: 24px; padding-right: 24px; }
+  .library-card { flex-direction: column; }
+  .library-card-lines { width: 100%; border-left: none; border-top: 1px solid var(--border); flex-direction: row; }
+  .library-card-lines span { flex: 1; height: 34px; }
+}
+</style>
+<template id="__bundler_thumbnail" data-bg-color="#0F141B">
+  <svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+    <rect width="120" height="80" fill="#0F141B"/>
+    <rect x="30" y="18" width="12" height="44" fill="#4a5a6e"/>
+    <rect x="44" y="18" width="12" height="44" fill="#6b7d90"/>
+    <rect x="58" y="18" width="12" height="44" fill="#a8907a"/>
+    <rect x="72" y="18" width="12" height="44" fill="#5a8aa8"/>
+    <text x="60" y="72" font-family="Georgia,serif" font-style="italic" font-size="8" fill="#6FAEE6" text-anchor="middle">Prompt Studio</text>
+  </svg>
+</template>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-left">
+    <div class="header-logo">Prompt <span>Studio</span></div>
+    <div class="header-sep"></div>
+    <div class="header-tag">Revit · Render Prompt Builder</div>
+  </div>
+  <nav class="header-nav">
+    <a href="index.html" class="active">Home</a>
+    <a href="residential.html">Residential</a>
+    <a href="commercial.html">Commercial</a>
+    <a href="prompt-library.html">Library</a>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-text">
+    <div class="kicker">Architectural AI Prompt Builder</div>
+    <h1>Compose the <em>materials.</em><br>Generate the prompt.</h1>
+    <p class="lead">A guided studio for turning façade finishes, glazing, shading and light into render-ready text prompts for Gemini, Imagen &amp; Nano Banana — built for Revit workflows. Pick from a curated material library; copy a precise prompt in seconds.</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="residential.html">
+        Residential Builder
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="commercial.html">Commercial Builder</a>
+      <a class="btn btn-ghost" href="prompt-library.html">Prompt Library</a>
+    </div>
+  </div>
+  <div class="facade" id="facade"></div>
+</section>
+
+<!-- BUILDERS -->
+<div class="section-head">
+  <span class="num">01</span>
+  <h2>Choose your building type</h2>
+  <span class="rule"></span>
+</div>
+<div class="builders">
+  <a class="builder-card residential" href="residential.html">
+    <div class="builder-preview" id="pvResidential"></div>
+    <div class="builder-body">
+      <div class="builder-eyebrow">Villas · Apartments · Houses</div>
+      <div class="builder-title">Residential</div>
+      <p class="builder-desc">Stone, stucco, timber and warm finishes for homes. Step through façade, accents, window frames, glazing, balcony railings, entrances and lighting mood.</p>
+      <div class="builder-meta">
+        <span class="builder-steps">17 guided steps</span>
+        <span class="builder-open">Open builder
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </div>
+    </div>
+  </a>
+  <a class="builder-card commercial" href="commercial.html">
+    <div class="builder-preview" id="pvCommercial"></div>
+    <div class="builder-body">
+      <div class="builder-eyebrow">Offices · Retail · Towers</div>
+      <div class="builder-title">Commercial</div>
+      <p class="builder-desc">Curtain walls, glazing systems, metal and stone rainscreens for larger builds. Compose façade systems, shading strategies, entrances and architectural light.</p>
+      <div class="builder-meta">
+        <span class="builder-steps">15 guided steps</span>
+        <span class="builder-open">Open builder
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </div>
+    </div>
+  </a>
+</div>
+
+<!-- PROMPT LIBRARY -->
+<div class="spacer-lg" style="height:46px;"></div>
+<div class="section-head">
+  <span class="num">02</span>
+  <h2>Or open your prompt library</h2>
+  <span class="rule"></span>
+</div>
+<div class="library-wrap">
+  <a class="library-card" href="prompt-library.html">
+    <div class="library-card-left">
+      <div class="builder-eyebrow">Store · Search · Sync</div>
+      <div class="builder-title">Prompt Library</div>
+      <p class="builder-desc">Your saved prompts for renders, video, marketing and engineering — searchable, tagged, categorized and synced across devices. Copy any prompt in one tap, or add new ones as you refine them.</p>
+      <div class="builder-meta" style="border-top:none; padding-top:6px;">
+        <span class="builder-steps">Render · Video · Marketing · Engineering</span>
+        <span class="builder-open">Open library
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="library-card-lines">
+      <span></span><span></span><span></span><span></span>
+    </div>
+  </a>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="spacer-lg"></div>
+<div class="section-head">
+  <span class="num">03</span>
+  <h2>How it works</h2>
+  <span class="rule"></span>
+</div>
+<div class="how">
+  <div class="how-item">
+    <div class="how-num">i</div>
+    <h3>Select materials</h3>
+    <p>Move through each step and tap the finishes you want — façade, glass, shading, railings, doors and the light of day you're after.</p>
+  </div>
+  <div class="how-item">
+    <div class="how-num">ii</div>
+    <h3>Watch the prompt build</h3>
+    <p>The right-hand panel assembles a clean, descriptive prompt live as you choose, with your selections woven into precise render language.</p>
+  </div>
+  <div class="how-item">
+    <div class="how-num">iii</div>
+    <h3>Copy &amp; render</h3>
+    <p>Copy the finished prompt into your image model, save presets for later, or export to PDF. Bring it back into your Revit render workflow.</p>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="footer-logo">Prompt <span>Studio</span></div>
+  <div class="footer-credit">By Eng. Kassem Rammal</div>
+</footer>
+
+<script>
+// Material gradient palettes (sampled from the builders)
+const RESIDENTIAL_BANDS = [
+  ['linear-gradient(160deg,#d0c0a0 0%,#c0b090 40%,#d8c8a8 70%,#b8a880 100%)', 'Limestone'],
+  ['repeating-linear-gradient(90deg,#8a5e30 0px,#7a5028 8px,#9a6e40 8px,#7a5028 16px)', 'Timber'],
+  ['linear-gradient(180deg,#7a7e80 0%,#686c6e 30%,#767a7c 60%,#6e7274 100%)', 'Concrete'],
+  ['linear-gradient(135deg,#f8f6f2 0%,#ede8e0 30%,#f4f0ea 60%,#e8e2d8 100%)', 'Marble'],
+  ['repeating-linear-gradient(0deg,#8a4828 0px,#8a4828 14px,#6a3818 14px,#6a3818 16px)', 'Brick'],
+];
+const COMMERCIAL_BANDS = [
+  ['linear-gradient(135deg,#3a6080 0%,#5a88a8 20%,#2a5070 45%,#6a98b8 65%,#3a6888 100%)', 'Reflective Glass'],
+  ['repeating-linear-gradient(160deg,#c8ccce 0px,#e4e8ea 2px,#a8acb0 2px,#dadde0 6px)', 'Aluminum'],
+  ['linear-gradient(160deg,rgba(160,200,230,0.55) 0%,rgba(200,230,255,0.75) 35%,rgba(130,180,220,0.45) 65%,rgba(180,215,245,0.65) 100%)', 'Curtain Wall'],
+  ['linear-gradient(150deg,#b86030 0%,#a85020 50%,#c07040 100%)', 'Terracotta'],
+  ['linear-gradient(160deg,#2a2e30 0%,#383c3e 25%,#222628 50%,#343838 75%,#2e3234 100%)', 'Basalt'],
+];
+
+// Hero facade = a mix of both, alternating
+const HERO_BANDS = [
+  RESIDENTIAL_BANDS[3], COMMERCIAL_BANDS[0], RESIDENTIAL_BANDS[0],
+  COMMERCIAL_BANDS[1], RESIDENTIAL_BANDS[1], COMMERCIAL_BANDS[4],
+];
+
+function buildFacade(el, bands, withTags) {
+  bands.forEach(([grad, name]) => {
+    const band = document.createElement('div');
+    band.className = 'facade-band';
+    band.style.background = grad;
+    if (withTags) {
+      const tag = document.createElement('span');
+      tag.className = 'facade-tag';
+      tag.textContent = name;
+      band.appendChild(tag);
+    }
+    el.appendChild(band);
+  });
+}
+
+function buildPreview(el, bands) {
+  bands.forEach(([grad]) => {
+    const pv = document.createElement('div');
+    pv.className = 'pv';
+    pv.style.background = grad;
+    el.appendChild(pv);
+  });
+}
+
+buildFacade(document.getElementById('facade'), HERO_BANDS, true);
+buildPreview(document.getElementById('pvResidential'), RESIDENTIAL_BANDS);
+buildPreview(document.getElementById('pvCommercial'), COMMERCIAL_BANDS);
+</script>
+
+<!-- PWA install banner -->
+<div id="install-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:300; background:#6FAEE6; color:#061018; padding:14px 18px; align-items:center; justify-content:space-between; font-family:'Space Grotesk',sans-serif; font-weight:600; gap:12px; box-shadow:0 -4px 20px rgba(0,0,0,0.4);">
+  <div>
+    <div style="font-size:13px;">Add Prompt Studio to your home screen</div>
+    <div style="font-size:11px; font-weight:400; margin-top:2px;">Install the full studio as an app</div>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button onclick="installApp()" style="background:#061018; color:#6FAEE6; border:none; border-radius:8px; padding:10px 16px; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:12px; cursor:pointer;">INSTALL</button>
+    <button onclick="document.getElementById('install-banner').style.display='none'" style="background:transparent; border:1px solid #061018; color:#061018; border-radius:8px; padding:10px 12px; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:12px; cursor:pointer;">&times;</button>
+  </div>
+</div>
+<script>
+if ('serviceWorker' in navigator) {
+  var swCode = "const CACHE='prompt-studio-v1';" +
+    "self.addEventListener('install',e=>{self.skipWaiting();});" +
+    "self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});" +
+    "self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));});";
+  var swBlob = new Blob([swCode], {type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(function(){});
+}
+var deferredPrompt;
+window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); deferredPrompt = e; document.getElementById('install-banner').style.display = 'flex'; });
+function installApp(){ if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt.userChoice.then(function(){ deferredPrompt = null; document.getElementById('install-banner').style.display = 'none'; }); } }
+window.addEventListener('appinstalled', function(){ document.getElementById('install-banner').style.display = 'none'; });
+</script>
+</body>
+</html>
